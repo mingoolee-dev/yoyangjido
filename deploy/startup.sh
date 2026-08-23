@@ -13,7 +13,9 @@ DOMAIN="yoyangjido.com"
 APP_DIR="/opt/yoyangjido"
 XLSX="data/장기요양기관_시설별현황.xlsx"
 REGION="군산"
-LOGKEY="setup-8f3a91c40b"   # 설치 로그 확인용 임시 경로. 확인 끝나면 지운다.
+# 설치 상태 확인용 비공개 경로.
+# 로그 전문은 더 이상 공개하지 않는다. 서비스가 살아 있는지와 배포된 커밋만 적는다.
+LOGKEY="setup-8f3a91c40b"
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
@@ -72,6 +74,15 @@ git fetch --quiet --depth 1 origin main || exit 0
 git reset --hard --quiet origin/main
 AFTER=$(git rev-parse HEAD)
 [ "$BEFORE" = "$AFTER" ] && exit 0
+
+# 설치 스크립트 자체가 바뀌었으면 서버 설정까지 다시 맞춘다.
+# (SSH를 못 쓰므로, 이것이 서버 설정을 바꾸는 유일한 통로다. 재부팅이 필요 없어진다.)
+if ! git diff --quiet "$BEFORE" "$AFTER" -- deploy/startup.sh 2>/dev/null; then
+  systemd-run --collect --unit="yoyangjido-setup-$AFTER" \
+    /bin/bash /opt/yoyangjido/deploy/startup.sh
+  exit 0
+fi
+
 .venv/bin/pip install -q -r requirements.txt
 [ -f "data/장기요양기관_시설별현황.xlsx" ] && \
   .venv/bin/python build_db.py "data/장기요양기관_시설별현황.xlsx" 군산
@@ -116,9 +127,12 @@ ${DOMAIN}, www.${DOMAIN} {
         Referrer-Policy strict-origin-when-cross-origin
         -Server
     }
-    handle_path /${LOGKEY}/* {
+    handle /${LOGKEY} {
         root * /var/www/diag
-        file_server browse
+        rewrite * /status.txt
+        header Content-Type "text/plain; charset=utf-8"
+        header X-Robots-Tag "noindex, nofollow"
+        file_server
     }
     handle {
         reverse_proxy 127.0.0.1:8000
@@ -146,25 +160,18 @@ systemctl restart yoyangjido
 systemctl restart yoyangjido-update.timer
 caddy validate --config /etc/caddy/Caddyfile && systemctl restart caddy
 
-# ── 설치 결과를 웹에서 확인할 수 있게 남긴다 (확인 후 제거) ───────────
+# ── 설치 결과 요약 ────────────────────────────────────────────────────
+# 로그 전문은 남기지 않는다. 서버 로그를 웹에 공개하면 경로·오류 내용이 그대로 새어나간다.
+# 여기 적는 것은 "살아 있는가"와 "어느 커밋이 올라가 있는가" 두 가지뿐이다.
 sleep 4
 {
-  echo "설치 종료 시각: $(date -Is)"
-  echo
-  echo "== 서비스 상태 =="
-  systemctl is-active yoyangjido caddy yoyangjido-update.timer
-  echo
-  echo "== 앱 응답 =="
-  curl -s -o /dev/null -w "127.0.0.1:8000/healthz -> %{http_code}\n" http://127.0.0.1:8000/healthz
-  echo
-  echo "== 시설 DB =="
-  ls -l "$APP_DIR/yoyangjido.db" 2>&1
-  echo
-  echo "== 앱 로그 (마지막 40줄) =="
-  tail -n 40 /var/log/yoyangjido.log 2>&1
-  echo
-  echo "== 설치 로그 (마지막 60줄) =="
-  tail -n 60 /var/log/yoyangjido-bootstrap.log 2>&1
+  echo "확인 시각      : $(date -Is)"
+  echo "배포 커밋      : $(git -C "$APP_DIR" rev-parse --short HEAD 2>/dev/null || echo 확인불가)"
+  echo "앱             : $(systemctl is-active yoyangjido)"
+  echo "웹서버         : $(systemctl is-active caddy)"
+  echo "갱신 타이머    : $(systemctl is-active yoyangjido-update.timer)"
+  echo "healthz 응답   : $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/healthz)"
+  echo "시설 DB 크기   : $(stat -c %s "$APP_DIR/yoyangjido.db" 2>/dev/null || echo 없음) bytes"
 } > /var/www/diag/status.txt 2>&1
 chmod 644 /var/www/diag/status.txt
 

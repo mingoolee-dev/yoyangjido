@@ -3,3 +3,4 @@ __pycache__/
 .venv/
 yoyangjido.db
 server.log
+crawler.db

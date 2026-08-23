@@ -1,6 +1,7 @@
 """요양지도 — 요양·간병 보호자를 위한 중립 정보 인프라"""
 import json
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
 
@@ -10,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 import compare
+import crawler
 import fees
 import seo
 
@@ -40,6 +42,15 @@ DATA_URL = "https://www.data.go.kr/data/15124763/fileData.do"
 
 app = FastAPI(title=SITE, docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
+
+crawler.준비()
+
+
+@app.middleware("http")
+async def 크롤러_기록(request: Request, call_next):
+    """검색·AI 크롤러가 실제로 왔는지만 남긴다. 사람 방문자는 기록하지 않는다."""
+    crawler.기록(request.headers.get("user-agent", ""), request.url.path)
+    return await call_next(request)
 tpl = Jinja2Templates(directory=BASE / "templates")
 tpl.env.filters["won"] = lambda v: f"{int(v):,}"
 tpl.env.filters["jsonld"] = lambda d: json.dumps(d, ensure_ascii=False, separators=(",", ":"))
@@ -312,6 +323,26 @@ def 색인정책(request: Request):
     return tpl.TemplateResponse(request, "policy.html", ctx(
         총계=총계, 색인수=색인수, 상한=seo.주간_색인_상한,
         색인=True, canonical="/색인정책"))
+
+
+@app.get("/setup-8f3a91c40b/크롤러", response_class=PlainTextResponse)
+def 크롤러_기록보기():
+    """어떤 크롤러가 실제로 다녀갔는가.
+    robots.txt에서 /setup- 을 막아두었고, 이 페이지는 사람 정보를 담지 않는다."""
+    행 = crawler.목록()
+    줄 = [f"요양지도 크롤러 접속 기록  ({datetime.now(crawler.KST):%Y-%m-%d %H:%M} KST)",
+          "=" * 62, ""]
+    if not 행:
+        줄 += ["아직 어떤 크롤러도 다녀가지 않았습니다.",
+              "",
+              "신규 도메인은 검수에 3~6주가 걸립니다. 제출했다는 것과",
+              "수집됐다는 것은 다릅니다. 이 목록이 채워질 때가 수집이 시작된 때입니다."]
+    else:
+        줄.append(f"{'크롤러':<22}{'횟수':>6}   {'처음':<17}{'마지막':<17}마지막 경로")
+        줄.append("-" * 62)
+        for r in 행:
+            줄.append(f"{r['이름']:<22}{r['횟수']:>6}   {r['처음']:<17}{r['마지막']:<17}{r['마지막경로']}")
+    return "\n".join(줄) + "\n"
 
 
 @app.get("/healthz", response_class=PlainTextResponse)

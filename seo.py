@@ -15,9 +15,15 @@
 """
 import json
 from pathlib import Path
+from urllib.parse import quote
 
 BASE = Path(__file__).parent
 DOMAIN = "https://yoyangjido.com"
+
+
+def _url(경로: str) -> str:
+    """스키마 안의 주소도 사이트맵과 같은 규칙으로 퍼센트 인코딩한다."""
+    return DOMAIN + quote(경로, safe="/")
 
 # 한 주에 새로 색인을 켤 수 있는 시설 페이지 수 상한.
 # 신규 도메인은 3~6주 검수 기간을 거치며, 비정상적인 발행 속도는 스팸 신호가 된다.
@@ -96,8 +102,11 @@ def 이동경로_스키마(items: list[tuple[str, str]]) -> dict:
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         "itemListElement": [
-            {"@type": "ListItem", "position": i + 1, "name": name,
-             "item": DOMAIN + url if url else None}
+            # url이 없는 단계는 item 키 자체를 빼야 한다. null을 넣으면 스키마가 깨진다.
+            {k: v for k, v in {
+                "@type": "ListItem", "position": i + 1, "name": name,
+                "item": _url(url) if url else None,
+            }.items() if v is not None}
             for i, (name, url) in enumerate(items)
         ],
     }
@@ -114,6 +123,31 @@ def 질문답변_스키마(qa: list[tuple[str, str]]) -> dict:
              "acceptedAnswer": {"@type": "Answer", "text": a}}
             for q, a in qa
         ],
+    }
+
+
+def 글_스키마(제목: str, 요약: str, 경로: str, 발행일: str, 수정일: str,
+             인용출처: list[str]) -> dict:
+    """Article. AI 검색이 인용할 때 '누가 언제 확인한 글인지'가 남도록 만든다.
+
+    citation에 우리가 실제로 읽은 1차 출처 주소를 넣는다.
+    읽지 않은 주소는 넣지 않는다 — 스키마는 우리가 한 일을 적는 곳이지
+    권위를 빌려오는 곳이 아니다.
+    """
+    return {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": 제목,
+        "description": 요약,
+        "url": _url(경로),
+        "mainEntityOfPage": {"@type": "WebPage", "@id": _url(경로)},
+        "datePublished": 발행일,
+        "dateModified": 수정일,
+        "inLanguage": "ko-KR",
+        "author": {"@type": "Organization", "name": "요양지도 편집실", "url": DOMAIN},
+        "publisher": {"@type": "Organization", "name": "요양지도", "url": DOMAIN},
+        "citation": 인용출처,
+        "isAccessibleForFree": True,
     }
 
 
@@ -138,7 +172,7 @@ def 계산기_스키마(기준일: str, 출처URL: str) -> dict:
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "요양원 본인부담금 계산기 (2026년 기준)",
-        "url": f"{DOMAIN}/계산기/요양원-본인부담금",
+        "url": _url("/계산기/요양원-본인부담금"),
         "applicationCategory": "FinanceApplication",
         "operatingSystem": "웹 브라우저",
         "offers": {"@type": "Offer", "price": "0", "priceCurrency": "KRW"},

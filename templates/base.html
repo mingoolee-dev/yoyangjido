@@ -4,7 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}{{ SITE }}{% endblock %}</title>
-<meta name="description" content="{% block desc %}부모님 요양·간병을 알아보는 자녀를 위한 중립 정보. 시설 정보와 비용 계산을 공개 데이터로 정리합니다.{% endblock %}">
+<meta name="description" content="{% block desc %}부모님 요양·간병을 알아보는 자녀를 위한 중립 정보. 제도와 금액을 1차 출처로 확인해 기준일과 함께 알려드립니다.{% endblock %}">
+
+{% if canonical %}<link rel="canonical" href="{{ DOMAIN }}{{ canonical }}">{% endif %}
+{% if not 색인 %}<meta name="robots" content="noindex, follow, noarchive">{% else %}<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">{% endif %}
+{% if 네이버_소유확인 %}<meta name="naver-site-verification" content="{{ 네이버_소유확인 }}">{% endif %}
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="요양지도">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:title" content="{{ self.title() }}">
+<meta property="og:description" content="{{ self.desc() }}">
+{% if canonical %}<meta property="og:url" content="{{ DOMAIN }}{{ canonical }}">{% endif %}
+<meta name="twitter:card" content="summary">
+<meta name="author" content="요양지도 편집실">
+<meta name="date" content="{{ 갱신일 }}">
+
+{% for s in 스키마 %}
+<script type="application/ld+json">{{ s|jsonld|safe }}</script>
+{% endfor %}
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -50,13 +69,15 @@
     <p>
       제도와 금액은 모두 1차 출처(보건복지부·국민건강보험공단)로 확인해 기준일을 함께 적습니다.<br>
       의료 조언은 하지 않습니다. 건강 문제는 의료진과 상의하세요.
+      <a href="/색인정책">검색엔진 색인 정책</a>
     </p>
-    <p style="margin-top:1rem">
+    <p>
       힘드실 때 연락하실 수 있는 곳 —
       보건복지상담센터 <strong>129</strong> ·
       자살예방상담전화 <strong>109</strong> ·
       치매상담콜센터 <strong>1899-9988</strong>
     </p>
+    <p class="upd">이 페이지 최종 확인 {{ 갱신일 }}</p>
   </div>
 </footer>
 

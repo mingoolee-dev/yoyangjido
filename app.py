@@ -2,6 +2,7 @@
 import json
 import sqlite3
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import FastAPI, Request, Query
 from fastapi.responses import HTMLResponse, PlainTextResponse, Response
@@ -49,11 +50,18 @@ def db():
     return con
 
 
+def 절대주소(경로: str) -> str:
+    """한글 경로를 퍼센트 인코딩한 절대 주소.
+    사이트맵 규격은 URL을 RFC-3986으로 이스케이프하도록 요구한다.
+    한글을 그대로 넣으면 구글이 사이트맵을 읽지 못한다(2026-08-23 실제로 겪음)."""
+    return DOMAIN + quote(경로, safe="/")
+
+
 def ctx(**kw):
     base = {
         "SITE": SITE, "DOMAIN": DOMAIN, "여정단계": 여정단계,
         "DATA_기준일": DATA_기준일, "DATA_출처": DATA_출처, "DATA_URL": DATA_URL,
-        "갱신일": 갱신일, "네이버_소유확인": 네이버_소유확인,
+        "갱신일": 갱신일, "네이버_소유확인": 네이버_소유확인, "절대주소": 절대주소,
         # 기본은 색인 금지. 켤 페이지에서만 명시적으로 뒤집는다.
         "색인": False, "canonical": None, "스키마": [],
     }
@@ -214,11 +222,8 @@ def sitemap():
             urls.append((f"/시설/전북/군산시/{f['slug']}", "0.5"))
     con.close()
 
-    def esc(u: str) -> str:
-        return u.replace("&", "&amp;")
-
     body = "".join(
-        f"<url><loc>{esc(DOMAIN + u)}</loc>"
+        f"<url><loc>{절대주소(u).replace('&', '&amp;')}</loc>"
         f"<lastmod>{갱신일}</lastmod><priority>{p}</priority></url>"
         for u, p in urls)
     return Response(

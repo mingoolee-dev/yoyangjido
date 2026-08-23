@@ -6,7 +6,7 @@
 <title>{% block title %}{{ SITE }}{% endblock %}</title>
 <meta name="description" content="{% block desc %}부모님 요양·간병을 알아보는 자녀를 위한 중립 정보. 제도와 금액을 1차 출처로 확인해 기준일과 함께 알려드립니다.{% endblock %}">
 
-{% if canonical %}<link rel="canonical" href="{{ DOMAIN }}{{ canonical }}">{% endif %}
+{% if canonical %}<link rel="canonical" href="{{ 절대주소(canonical) }}">{% endif %}
 {% if not 색인 %}<meta name="robots" content="noindex, follow, noarchive">{% else %}<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">{% endif %}
 {% if 네이버_소유확인 %}<meta name="naver-site-verification" content="{{ 네이버_소유확인 }}">{% endif %}
 
@@ -15,7 +15,7 @@
 <meta property="og:locale" content="ko_KR">
 <meta property="og:title" content="{{ self.title() }}">
 <meta property="og:description" content="{{ self.desc() }}">
-{% if canonical %}<meta property="og:url" content="{{ DOMAIN }}{{ canonical }}">{% endif %}
+{% if canonical %}<meta property="og:url" content="{{ 절대주소(canonical) }}">{% endif %}
 <meta name="twitter:card" content="summary">
 <meta name="author" content="요양지도 편집실">
 <meta name="date" content="{{ 갱신일 }}">

@@ -204,3 +204,42 @@ footer.site a{color:var(--ink-2)}
 footer.site .upd{
   font-family:var(--mono); font-size:.76rem; color:var(--ink-3); margin-top:1rem;
 }
+
+/* ── 글(비교 문서) ───────────────────────── */
+caption{caption-side:top;text-align:left;font-size:.8rem;color:var(--ink-3);
+        padding:.6rem .75rem;font-family:var(--mono);line-height:1.6}
+td .sub{display:block;color:var(--ink-3);font-size:.85rem;line-height:1.6;margin-top:.15rem}
+
+.cmp{border-top:1px solid var(--rule-soft);padding-top:.9rem;margin:1.1rem 0}
+.cmp h3{margin:0 0 .5rem;font-size:1.02rem;color:var(--accent)}
+.cmp dl{margin:0;display:grid;grid-template-columns:5.4rem 1fr;gap:.35rem .8rem}
+.cmp dt{font-size:.85rem;font-weight:600;color:var(--ink-3);padding-top:.1rem}
+.cmp dd{margin:0;font-size:.97rem}
+.cmp-src{font-size:.82rem;color:var(--ink-3);line-height:1.7;margin:.7rem 0 0}
+
+.fee-note{font-size:.9rem;color:var(--ink-2);line-height:1.75}
+
+.unknown{background:var(--surface);border:1px solid var(--rule);
+         border-left:5px solid var(--sand);padding:.9rem 1.1rem;margin:.9rem 0}
+.unknown h3{margin:0 0 .45rem;font-size:1rem}
+.unknown p{margin:0 0 .35rem;font-size:.93rem;color:var(--ink-2);line-height:1.7}
+.unknown p:last-child{margin-bottom:0}
+.unknown b{color:var(--ink)}
+
+.cta{display:inline-flex;align-items:center;min-height:52px;padding:0 1.2rem;
+     background:var(--accent);color:#fff;text-decoration:none;border-radius:3px;
+     font-weight:500;margin:.4rem 0 1rem}
+.cta:hover{filter:brightness(1.08)}
+
+/* ── 좁은 화면에서 상단 메뉴가 로고를 밀어내지 않게 ── */
+@media (max-width:34rem){
+  .bar{flex-wrap:wrap;row-gap:.2rem}
+  .logo{flex:0 0 auto}
+  .bar nav{flex:1 1 100%;overflow-x:auto;scrollbar-width:none;
+           border-top:1px solid var(--rule-soft);padding-bottom:.15rem}
+  .bar nav::-webkit-scrollbar{display:none}
+  .bar nav a{white-space:nowrap;min-height:46px;padding:0 .6rem}
+  .bar nav a:first-child{padding-left:0}
+}
+td.nw,th.nw{white-space:nowrap}
+.tw table{min-width:20rem}

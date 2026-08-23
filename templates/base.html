@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}{{ SITE }}{% endblock %}</title>
-<meta name="description" content="{% block desc %}부모님 요양·간병을 알아보는 자녀를 위한 중립 정보. 제도와 금액을 1차 출처로 확인해 기준일과 함께 알려드립니다.{% endblock %}">
+<meta name="description" content="{% block desc %}부모님 요양을 알아보기 시작하셨다면. 요양원과 요양병원의 차이, 한 달에 드는 돈, 등급 신청 방법을 2026년 기준으로 정리했습니다.{% endblock %}">
 
 {% if canonical %}<link rel="canonical" href="{{ 절대주소(canonical) }}">{% endif %}
 {% if not 색인 %}<meta name="robots" content="noindex, follow, noarchive">{% else %}<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">{% endif %}
@@ -63,14 +63,12 @@
 <footer class="site">
   <div class="wrap">
     <p>
-      <strong style="color:var(--ink-2)">요양지도</strong> — 부모님 요양·간병을 알아보는 자녀를 위한 중립 정보 인프라.<br>
-      시설 정보는 국민건강보험공단 공개 데이터를 그대로 옮긴 것입니다.
-      저희가 시설의 순위나 등급을 매기지 않습니다.
+      <strong style="color:var(--ink-2)">요양지도</strong> — 부모님 요양·간병을 알아보는 자녀를 위한 정보 사이트.<br>
+      금액과 제도는 보건복지부·국민건강보험공단 자료로 확인해 기준일을 함께 적습니다.
+      시설 정보는 공단 공개 자료 그대로이고, 저희가 순위를 매기지 않습니다.
     </p>
     <p>
-      제도와 금액은 모두 1차 출처(보건복지부·국민건강보험공단)로 확인해 기준일을 함께 적습니다.<br>
-      의료 조언은 하지 않습니다. 건강 문제는 의료진과 상의하세요.
-      <a href="/색인정책">검색엔진 색인 정책</a>
+      의료 조언은 하지 않습니다. 건강 문제는 진료하신 의사와 상의하세요.
     </p>
     <p>
       힘드실 때 연락하실 수 있는 곳 —

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% set 현재단계 = "시설 선택" %}
+{% block title %}요양원 한 달 본인부담금 계산 (2026년 기준) — 요양지도{% endblock %}
+{% block desc %}장기요양등급만 고르면 2026년 수가 기준으로 요양원 한 달 본인부담금을 계산합니다. 보건복지부 고시 1차 출처.{% endblock %}
+
+{% block stamp %}
+<div class="wrap">
+  <p class="stamp">
+    기준일 {{ fees.기준일 }} · 출처 {{ fees.출처명 }} ({{ fees.고시일 }} 의결)
+    · <a href="{{ fees.출처URL }}" rel="nofollow">원문 보기</a>
+  </p>
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>요양원, 한 달에 얼마 드나요</h1>
+<p class="lede">
+  장기요양등급만 고르시면 됩니다. 2026년 수가로 계산합니다.
+</p>
+
+<form class="calc" method="get" action="">
+  <div class="field">
+    <label for="등급">부모님 장기요양등급</label>
+    <p class="hint">아직 등급이 없으시면 먼저 공단에 신청하셔야 합니다. 등급이 없으면 요양원 급여를 받을 수 없습니다.</p>
+    <div class="radios">
+      {% for g in ["1","2","3","4","5"] %}
+      <label>
+        <input type="radio" name="등급" value="{{ g }}" {% if 등급 == g %}checked{% endif %}>
+        <span>{{ g }}등급</span>
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="일수">한 달 계실 날짜</label>
+    <p class="hint">요양원은 하루 단위로 계산합니다. 보통 30일로 봅니다.</p>
+    <input id="일수" type="number" name="일수" min="1" max="31" value="{{ 일수 }}">
+  </div>
+
+  <div class="field">
+    <label for="비급여">식재료비 등 비급여 (아시면 입력)</label>
+    <p class="hint">
+      식재료비·상급침실료·이미용비는 <strong>시설마다 다르고 전액 본인 부담</strong>입니다.
+      저희가 임의로 넣지 않습니다. 상담 때 물어보시고 아시는 금액을 넣으세요. 모르시면 비워두세요.
+    </p>
+    <input id="비급여" type="number" name="비급여" min="0" step="10000" value="{{ 비급여 or '' }}" placeholder="예: 300000">
+  </div>
+
+  <button class="btn" type="submit">계산하기</button>
+</form>
+
+{% if 결과 %}
+<div class="result">
+  <div class="big">월 {{ 결과.합계_월|won }}원</div>
+  <div class="cap">
+    {{ 결과.등급 }}등급 · {{ 결과.일수 }}일 기준{% if 결과.비급여_월 %} · 비급여 포함{% endif %}
+  </div>
+
+  <ul class="breakdown">
+    <li><span>하루 요양원 비용 (전체)</span><span class="v">{{ 결과.수가_1일|won }}원</span></li>
+    <li><span>그중 공단이 냅니다 (80%)</span><span class="v">−{{ (결과.수가_1일 - 결과.본인부담_1일)|won }}원</span></li>
+    <li><span>하루 내실 돈 (20%)</span><span class="v">{{ 결과.본인부담_1일|won }}원</span></li>
+    <li><span>{{ 결과.일수 }}일치 급여 본인부담</span><span class="v">{{ 결과.급여_본인부담_월|won }}원</span></li>
+    {% if 결과.비급여_월 %}
+    <li><span>비급여 (직접 입력하신 금액)</span><span class="v">{{ 결과.비급여_월|won }}원</span></li>
+    {% endif %}
+    <li class="sum"><span>한 달 내실 돈</span><span class="v">{{ 결과.합계_월|won }}원</span></li>
+  </ul>
+</div>
+
+{% if not 결과.비급여_월 %}
+<div class="note warn">
+  <b>이 금액에 식비가 빠져 있습니다.</b><br>
+  식재료비는 급여가 아니라 전액 본인 부담이고 시설마다 다릅니다.
+  실제로는 여기에 <strong>월 25만~40만 원 정도가 더 붙는 경우가 많습니다.</strong>
+  정확한 금액은 시설에 직접 물어보셔야 하고, 저희가 대신 짐작해 드리지 않습니다.
+</div>
+{% endif %}
+
+<div class="note">
+  <b>기초생활수급자시거나 소득이 낮으시면 이 금액이 더 내려갑니다.</b><br>
+  본인부담금 감경 제도가 있습니다. 다만 저희가 아직 2026년 기준을 1차 출처로 확인하지 못해서
+  <strong>금액을 함부로 적지 않았습니다.</strong> 확인되는 대로 계산에 넣겠습니다.
+  그 전에는 관할 국민건강보험공단 지사(1577-1000)에 물어보시는 것이 정확합니다.
+</div>
+
+<div class="adslot">
+  <span class="tag">광고 자리</span>
+  <p class="empty">이 자리는 군산 지역 요양시설을 위한 광고 지면입니다. 아직 비어 있습니다.</p>
+</div>
+
+<h2>이제 어디로 모실지 보실 차례입니다</h2>
+<p>
+  계산하신 금액으로 갈 수 있는 군산시 요양시설을 정리해 두었습니다.
+  공단 공개 자료 그대로이고, 저희가 순위를 매기지 않았습니다.
+</p>
+<p><a class="btn ghost" href="/시설/전북/군산시/?유형=요양원">군산시 요양원 보기</a></p>
+{% endif %}
+
+<h2>등급별로 얼마인지 한 번에 보기</h2>
+<div class="tw">
+  <table>
+    <thead>
+      <tr>
+        <th>등급</th><th class="n">하루 전체 비용</th>
+        <th class="n">하루 내실 돈</th><th class="n">30일 기준</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for g in ["1","2","3","4","5"] %}
+      <tr>
+        <td>{{ g }}등급</td>
+        <td class="n">{{ 표[g].수가|won }}원</td>
+        <td class="n">{{ 표[g].본인부담|won }}원</td>
+        <td class="n">{{ (표[g].본인부담 * 30)|won }}원</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="stamp" style="border:0">
+  3·4·5등급은 수가가 같습니다. 식재료비 등 비급여는 포함되지 않은 금액입니다.
+</p>
+
+<h2>자주 헷갈리시는 것</h2>
+<h3>요양원과 요양병원은 다른 곳입니다</h3>
+<p>
+  <strong>요양원</strong>은 장기요양보험(국민건강보험공단)으로 운영되고, 등급을 받아야 들어갈 수 있습니다.
+  생활을 돕는 곳입니다.<br>
+  <strong>요양병원</strong>은 의료기관이라 <strong>건강보험</strong>으로 운영됩니다.
+  장기요양등급은 요양병원 비용에 적용되지 않습니다. 대신 간병비가 따로 듭니다.
+</p>
+<div class="note">
+  <b>"4등급 받았으니 요양병원 비용도 지원된다"는 말은 사실이 아닙니다.</b><br>
+  장기요양급여는 재가급여·시설급여·특별현금급여 세 가지뿐이고, 요양병원 입원비는 여기 들어가지 않습니다.
+  (근거: 노인장기요양보험법 제23조~제26조)
+</div>
+{% endblock %}

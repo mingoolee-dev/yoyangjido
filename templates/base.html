@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ SITE }}{% endblock %}</title>
+<meta name="description" content="{% block desc %}부모님 요양·간병을 알아보는 자녀를 위한 중립 정보. 시설 정보와 비용 계산을 공개 데이터로 정리합니다.{% endblock %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap bar">
+    <a class="logo" href="/">요양<span>지도</span></a>
+    <nav>
+      <a href="/계산기/요양원-본인부담금">비용 계산</a>
+      <a href="/시설/전북/군산시/">시설 찾기</a>
+    </nav>
+  </div>
+</header>
+
+<div class="journey">
+  <div class="wrap">
+    <ol>
+      {% for s in 여정단계 %}
+      <li{% if s == 현재단계 %} class="on"{% endif %}>
+        {% if s == 현재단계 %}<b>{{ s }}</b>{% else %}{{ s }}{% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+  </div>
+</div>
+
+{% block stamp %}{% endblock %}
+
+<main class="wrap">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>
+      <strong style="color:var(--ink-2)">요양지도</strong> — 부모님 요양·간병을 알아보는 자녀를 위한 중립 정보 인프라.<br>
+      시설 정보는 국민건강보험공단 공개 데이터를 그대로 옮긴 것입니다.
+      저희가 시설의 순위나 등급을 매기지 않습니다.
+    </p>
+    <p>
+      제도와 금액은 모두 1차 출처(보건복지부·국민건강보험공단)로 확인해 기준일을 함께 적습니다.<br>
+      의료 조언은 하지 않습니다. 건강 문제는 의료진과 상의하세요.
+    </p>
+    <p style="margin-top:1rem">
+      힘드실 때 연락하실 수 있는 곳 —
+      보건복지상담센터 <strong>129</strong> ·
+      자살예방상담전화 <strong>109</strong> ·
+      치매상담콜센터 <strong>1899-9988</strong>
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>

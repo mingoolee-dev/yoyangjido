@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% set 현재단계 = "시설 선택" %}
+{% block title %}{{ f.name }} — 군산시 {{ f.대표유형 }} | 요양지도{% endblock %}
+{% block desc %}{{ f.name }}({{ f.sigungu }} {{ f.dong.split(' ')[-1] if f.dong else '' }}) 기본 정보. 유형·정원·인력·지정일자. 국민건강보험공단 공개 자료 기준 {{ DATA_기준일 }}.{% endblock %}
+
+{% block stamp %}
+<div class="wrap">
+  <p class="stamp">
+    기준일 {{ DATA_기준일 }} · 출처 {{ DATA_출처 }} ·
+    <a href="{{ DATA_URL }}" rel="nofollow">원문 보기</a>
+  </p>
+</div>
+{% endblock %}
+
+{% block content %}
+<p class="crumb">
+  <a href="/">요양지도</a> ›
+  <a href="/시설/전북/군산시/">군산시</a> ›
+  <a href="/시설/전북/군산시/?유형={{ f.대표유형 }}">{{ f.대표유형 }}</a>
+</p>
+
+<h1>{{ f.name }}</h1>
+<p class="lede">{{ 유형설명.get(f.대표유형, "") }}</p>
+
+<h2>기본 정보</h2>
+<div class="tw">
+  <table>
+    <tbody>
+      <tr><th>주소</th><td>{{ f.addr }}</td></tr>
+      <tr><th>하는 일</th><td>{% for t in ts %}{{ t.type }}{% if t.capacity %} (정원 {{ t.capacity }}){% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</td></tr>
+      <tr><th>지정일자</th><td>{{ f.desig_date[:4] }}년 {{ f.desig_date[4:6] }}월 {{ f.desig_date[6:8] }}일</td></tr>
+      <tr><th>기관코드</th><td style="font-family:var(--mono)">{{ f.code }}</td></tr>
+    </tbody>
+  </table>
+</div>
+
+{% if f.인력합계 %}
+<h2>일하시는 분들</h2>
+<p>공단에 등록된 인력 현황입니다. 실제 근무 인원은 달라질 수 있습니다.</p>
+<div class="tw">
+  <table>
+    <thead><tr><th>직종</th><th class="n">인원</th></tr></thead>
+    <tbody>
+      {% for label, v in [("요양보호사", f.요양보호사), ("간호사", f.간호사),
+                          ("간호조무사", f.간호조무사), ("사회복지사", f.사회복지사),
+                          ("물리치료사", f.물리치료사), ("작업치료사", f.작업치료사),
+                          ("촉탁의사", f.의사_촉탁), ("영양사", f.영양사)] %}
+      {% if v %}<tr><td>{{ label }}</td><td class="n">{{ v }}명</td></tr>{% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if 비용 %}
+<h2>여기 모시면 한 달에 얼마 드나요</h2>
+<p>2026년 수가 기준입니다. 30일 계신다고 보고 계산했습니다.</p>
+<div class="tw">
+  <table>
+    <thead><tr><th>등급</th><th class="n">한 달 본인부담 (급여)</th></tr></thead>
+    <tbody>
+      {% for g, v in 비용.items() %}
+      <tr>
+        <td>{{ g }}등급{% if g == "3" %} (3·4·5등급 동일){% endif %}</td>
+        <td class="n">{{ v.합계_월|won }}원</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="note warn">
+  <b>여기에 식재료비가 빠져 있습니다.</b>
+  식재료비·상급침실료·이미용비는 전액 본인 부담이고 시설마다 다릅니다.
+  이 시설의 금액은 저희도 모르니 상담하실 때 직접 물어보세요.
+</div>
+<p><a class="btn ghost" href="/계산기/요양원-본인부담금">내 등급으로 자세히 계산하기</a></p>
+{% endif %}
+
+<h2>가보시기 전에 물어보실 것</h2>
+<ul>
+  <li>지금 <strong>빈자리가 있나요.</strong> 없으면 보통 얼마나 기다리나요</li>
+  <li><strong>한 달에 실제로 내는 돈이 전부 얼마인가요.</strong> 식재료비·기저귀·이미용비를 따로 적어 주세요</li>
+  <li>어르신 <strong>몇 분당 요양보호사 한 분</strong>이신가요. 밤에는 몇 분 계시나요</li>
+  <li>면회는 언제 되나요. 미리 연락드려야 하나요</li>
+  <li>병원에 모셔야 할 때 어떻게 되나요. 누가 같이 가나요</li>
+</ul>
+<div class="note">
+  <b>전화번호는 아직 저희가 확인하지 못했습니다.</b>
+  공단 공개 자료에 연락처가 들어 있지 않습니다. 확인되는 대로 올리겠습니다.
+  그 전에는 지도 앱에서 시설 이름으로 찾으시면 나옵니다.
+</div>
+
+<div class="adslot">
+  <span class="tag">광고 자리</span>
+  <p class="empty">이 자리는 군산 지역 요양시설을 위한 광고 지면입니다. 아직 비어 있습니다.</p>
+</div>
+
+{% if 같은동 %}
+<h2>가까운 곳도 같이 보시겠어요</h2>
+<p>{{ f.dong.split(' ')[-1] }}에 있는 다른 시설입니다.</p>
+<ul class="list">
+  {% for r in 같은동 %}
+  <li>
+    <a href="/시설/전북/군산시/{{ r.slug }}">
+      <span class="nm">{{ r.name }}</span>
+      <span class="meta">{{ r.대표유형 }}{% if r.대표정원 %} · 정원 {{ r.대표정원 }}{% endif %}</span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<div class="note">
+  <b>이 페이지에 대해.</b>
+  공단이 공개한 자료를 그대로 옮긴 것입니다. 저희가 이 시설을 평가하거나 추천하지 않습니다.
+  잘못된 내용이 있으면 알려 주세요. 시설에서 알려주신 내용도 기록으로 남깁니다.
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% set 현재단계 = "시설 선택" %}
+{% block title %}군산시 요양시설 {{ 총계 }}곳 전부 {% if 유형 %}— {{ 유형 }} {% endif %}| 요양지도{% endblock %}
+{% block desc %}전북 군산시 장기요양기관 전체 목록. 요양원·주야간보호·방문요양·복지용구. 국민건강보험공단 공개 자료 기준.{% endblock %}
+
+{% block stamp %}
+<div class="wrap">
+  <p class="stamp">
+    기준일 {{ DATA_기준일 }} · 출처 {{ DATA_출처 }} ·
+    <a href="{{ DATA_URL }}" rel="nofollow">원문 보기</a>
+  </p>
+</div>
+{% endblock %}
+
+{% block content %}
+<p class="crumb"><a href="/">요양지도</a> › 전북특별자치도 › 군산시</p>
+
+<h1>군산시 요양시설{% if 유형 %} — {{ 유형 }}{% endif %}</h1>
+
+{% if 유형 %}
+<p class="lede">{{ 유형설명[유형] }}</p>
+{% else %}
+<p class="lede">
+  군산시에 있는 장기요양기관 <strong>{{ rows|length }}곳 전부</strong>입니다.
+  제휴한 곳만 보여드리는 것이 아니라, 공단에 등록된 곳을 빠짐없이 옮겼습니다.
+</p>
+<p>
+  군산은 바다와 들이 함께 있는 도시라 시설이 시내(나운동·수송동·조촌동)와
+  면 지역(서수면·나포면·임피면)에 나뉘어 있습니다.
+  <strong>모시고 다니실 거리를 먼저 생각하시는 편이 좋습니다.</strong>
+  주야간보호는 매일 오가야 하니 집에서 가까운 곳이, 요양원은 면회를 얼마나 자주 가실지가 기준이 됩니다.
+</p>
+{% endif %}
+
+<div class="chips">
+  <a href="/시설/전북/군산시/" {% if not 유형 %}class="on"{% endif %}>전체<span class="n">{{ 총계 }}</span></a>
+  {% for t, n in 유형별 %}
+  <a href="/시설/전북/군산시/?유형={{ t }}" {% if 유형 == t %}class="on"{% endif %}>{{ t }}<span class="n">{{ n }}</span></a>
+  {% endfor %}
+</div>
+
+<div class="adslot">
+  <span class="tag">광고 자리</span>
+  <p class="empty">이 자리는 군산 지역 요양시설을 위한 광고 지면입니다. 아직 비어 있습니다.</p>
+</div>
+
+{% if rows %}
+<ul class="list">
+  {% for r in rows %}
+  <li>
+    <a href="/시설/전북/군산시/{{ r.slug }}">
+      <span class="nm">{{ r.name }}</span>
+      <span class="meta">
+        {% if not 유형 %}{{ r.대표유형 }}{% endif %}
+        {% if r.capacity %} · 정원 {{ r.capacity }}{% endif %}
+        {% if r.dong %} · {{ r.dong.split(' ')[-1] }}{% endif %}
+      </span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="empty-state">
+  <p>이 조건에 맞는 시설이 아직 없습니다. 위에서 다른 종류를 눌러보세요.</p>
+</div>
+{% endif %}
+
+<div class="note">
+  <b>정원은 최대 수용 인원입니다. 빈자리 수가 아닙니다.</b><br>
+  공단이 공개하는 자료에는 현재 몇 분이 계신지가 들어 있지 않습니다.
+  자리가 있는지는 시설에 직접 물어보셔야 합니다. 저희가 짐작해서 적지 않습니다.
+</div>
+
+<h2>가기 전에 비용부터 보시겠어요</h2>
+<p>등급만 고르시면 2026년 기준으로 한 달 본인부담금이 나옵니다.</p>
+<p><a class="btn ghost" href="/계산기/요양원-본인부담금">요양원 비용 계산하기</a></p>
+{% endblock %}

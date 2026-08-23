@@ -243,3 +243,10 @@ td .sub{display:block;color:var(--ink-3);font-size:.85rem;line-height:1.6;margin
 }
 td.nw,th.nw{white-space:nowrap}
 .tw table{min-width:20rem}
+
+/* ── 사실 목록 (홈 '등급 신청') ────────────── */
+.facts{list-style:none;padding:0;margin:1.1rem 0 .8rem;display:grid;gap:.1rem}
+.facts li{border-top:1px solid var(--rule-soft);padding:.85rem 0;
+          font-size:.97rem;color:var(--ink-2);line-height:1.75}
+.facts li:last-child{border-bottom:1px solid var(--rule-soft)}
+.facts b{display:block;color:var(--ink);font-weight:600;margin-bottom:.15rem}

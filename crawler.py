@@ -91,3 +91,57 @@ def 목록() -> list[dict]:
                 "SELECT * FROM 방문 ORDER BY 마지막 DESC")]
     except Exception:
         return []
+
+
+# ── 사람 방문자 수 ──────────────────────────────────────────────────────
+# 왜 필요한가:
+#   광고주에게 "월 방문자 ○○○명이면 그때부터 받겠습니다"라고 약속하려면
+#   그 숫자를 우리가 실제로 셀 수 있어야 한다.
+#   셀 수 없는 약속은 하지 않는다.
+#
+# 무엇을 세는가: 크롤러가 아닌 요청의 페이지 조회 수를, 달 단위로.
+# 무엇을 세지 않는가: IP도 쿠키도 남기지 않는다. 개인을 식별하지 않는다.
+#   그래서 이 숫자는 '순 방문자'가 아니라 '페이지 조회'다. 광고주에게도 그렇게 말한다.
+
+def 방문_준비():
+    with _con() as con:
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS 조회(
+                달 TEXT, 경로 TEXT, 횟수 INTEGER,
+                PRIMARY KEY (달, 경로)
+            )""")
+
+
+def 방문_기록(ua: str, 경로: str) -> None:
+    """사람 요청만 센다. 크롤러·정적파일·진단경로는 빼고."""
+    if 판별(ua):
+        return
+    if 경로.startswith(("/static/", "/setup-")) or 경로 in ("/healthz", "/favicon.ico",
+                                                          "/robots.txt", "/sitemap.xml"):
+        return
+    달 = datetime.now(KST).strftime("%Y-%m")
+    try:
+        with _con() as con:
+            con.execute("""
+                INSERT INTO 조회(달, 경로, 횟수) VALUES(?,?,1)
+                ON CONFLICT(달, 경로) DO UPDATE SET 횟수 = 횟수 + 1
+            """, (달, 경로[:200]))
+    except Exception:
+        pass
+
+
+def 방문_요약(달수: int = 6) -> list[dict]:
+    """달별 합계와 그 달의 상위 경로."""
+    try:
+        with _con() as con:
+            달목록 = [r["달"] for r in con.execute(
+                "SELECT 달 FROM 조회 GROUP BY 달 ORDER BY 달 DESC LIMIT ?", (달수,))]
+            결과 = []
+            for m in 달목록:
+                합 = con.execute("SELECT SUM(횟수) s FROM 조회 WHERE 달=?", (m,)).fetchone()["s"] or 0
+                상위 = [(r["경로"], r["횟수"]) for r in con.execute(
+                    "SELECT 경로, 횟수 FROM 조회 WHERE 달=? ORDER BY 횟수 DESC LIMIT 8", (m,))]
+                결과.append({"달": m, "합계": 합, "상위": 상위})
+            return 결과
+    except Exception:
+        return []

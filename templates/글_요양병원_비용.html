@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% set 현재단계 = "시설 선택" %}
+{% block title %}{{ 제목 }} — 요양지도{% endblock %}
+{% block desc %}{{ 요약 }}{% endblock %}
+
+{% block stamp %}
+<div class="wrap">
+  <p class="stamp">
+    출처 {{ hospital.출처.건강보험.이름 }} ({{ hospital.출처.건강보험.페이지_수정일 }} 수정) ·
+    <a href="{{ hospital.출처.건강보험.URL }}" rel="nofollow noopener" target="_blank">원문 보기</a>
+  </p>
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>요양병원, 한 달에<br>얼마나 드나요</h1>
+
+<div class="answer">
+  <p><strong>요양병원은 전국 공통 금액이 없습니다.</strong>
+  요양원처럼 “1등급이면 얼마”가 정해져 있지 않고,
+  그 달에 든 <strong>요양급여비용총액에 본인부담률을 곱하는</strong> 방식이라 사람마다 다릅니다.</p>
+  <p>
+    <strong>곱하는 비율부터 갈립니다.</strong> 일반환자는 <strong>20%</strong>인데
+    <strong>‘선택입원군’으로 분류되면 40%</strong>로 두 배가 됩니다.
+    식대는 따로 <strong>50%</strong>를 내고, <strong>간병비는 대부분 전액 본인 부담</strong>으로 또 붙습니다.
+  </p>
+  <p>
+    <strong>기초생활수급자(의료급여 1종)라면 진료비가 무료입니다.</strong>
+    식대 20%만 내시면 됩니다. 2종은 진료비의 10%입니다.
+  </p>
+  <p class="answer-src">
+    {{ hospital.출처.건강보험.이름 }}({{ hospital.출처.건강보험.페이지_수정일 }} 수정) ·
+    {{ hospital.출처.의료급여.이름 }}({{ hospital.출처.의료급여.페이지_수정일 }} 수정) ·
+    최종 확인 {{ 갱신일 }}
+  </p>
+</div>
+
+<h2>한 달 비용은 세 덩어리입니다</h2>
+<p>
+  이 셋은 계산 방식이 <strong>완전히 다릅니다.</strong>
+  상담할 때 “한 달에 얼마예요”라고 뭉뚱그려 물으면 나중에 금액이 달라집니다.
+  <strong>반드시 나눠서 물어보셔야 합니다.</strong>
+</p>
+<ul class="facts">
+  <li>
+    <b>① 진료비</b>
+    요양급여비용총액 × 본인부담률. 환자 상태와 분류군에 따라 달라집니다.
+  </li>
+  <li>
+    <b>② 식대</b>
+    건강보험 가입자는 식대의 <strong>50%</strong>, 의료급여 수급권자는 <strong>20%</strong>입니다.
+    진료비와 별개로 계산됩니다.
+  </li>
+  <li>
+    <b>③ 간병비</b>
+    건강보험 급여가 <strong>아닙니다.</strong> 정해진 수가가 없어서 병원이 부르는 값이 곧 가격입니다.
+    개인 간병이냐 공동 간병이냐에 따라 크게 벌어집니다.
+  </li>
+</ul>
+
+<h2>건강보험이면 이 비율입니다</h2>
+<div class="tw">
+<table>
+  <caption>요양병원 입원 본인부담률 (건강보험심사평가원, {{ hospital.출처.건강보험.페이지_수정일 }} 수정)</caption>
+  <thead><tr><th>구분</th><th>본인일부부담률</th></tr></thead>
+  <tbody>
+    {% for r in hospital.건강보험 %}
+    <tr>
+      <td class="nw">{{ r.구분 }}</td>
+      <td><strong>{{ r.률 }}</strong>{% if r.설명 %}<span class="sub">{{ r.설명 }}</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    <tr><td class="nw">식대</td><td><strong>{{ hospital.건강보험_식대 }}</strong></td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note warn">
+  <b>상담에서 이 한 문장은 반드시 물어보세요.</b><br>
+  “저희 부모님은 <strong>어느 환자분류군</strong>으로 잡힙니까?”<br>
+  일반환자 20%와 선택입원군 40%는 <strong>두 배</strong> 차이입니다.
+  같은 병실, 같은 치료를 받아도 이 분류 하나로 내는 돈이 달라집니다.
+  <strong>이걸 먼저 알려주는 병원은 드뭅니다.</strong>
+</div>
+
+<h3>오래 계실수록 비율이 올라갑니다</h3>
+<p>{{ hospital.장기입원_차등.설명 }}</p>
+<ul>
+  <li>16일 ~ 30일 — {{ hospital.장기입원_차등['16일~30일'] }}</li>
+  <li>31일 이상 — {{ hospital.장기입원_차등['31일 이상'] }}</li>
+</ul>
+<p class="fee-note">
+  {{ hospital.장기입원_차등.제외 }} 근거: {{ hospital.장기입원_차등.근거 }}.
+</p>
+
+<h2>기초생활수급자는 얼마인가요</h2>
+<p>
+  <strong>가장 많이 검색되는 질문이고, 답이 가장 명확한 질문이기도 합니다.</strong>
+  의료급여 수급권자는 건강보험 가입자와 계산이 아예 다릅니다.
+</p>
+<div class="tw">
+<table>
+  <caption>의료급여 입원 본인부담률 — 식대 제외 (건강보험심사평가원, {{ hospital.출처.의료급여.페이지_수정일 }} 수정)</caption>
+  <thead><tr><th>구분</th><th>본인일부부담률</th></tr></thead>
+  <tbody>
+    {% for r in hospital.의료급여 %}
+    <tr>
+      <td class="nw">{{ r.구분 }}</td>
+      <td><strong>{{ r.률 }}</strong>{% if r.설명 %}<span class="sub">{{ r.설명 }}</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    <tr><td class="nw">식대</td><td><strong>{{ hospital.의료급여_식대 }}</strong></td></tr>
+  </tbody>
+</table>
+</div>
+<div class="note">
+  <b>1종 수급권자는 입원 진료비가 무료입니다.</b><br>
+  제1·2·3차 의료급여기관 어디서나 그렇습니다. 실제로 내시는 것은 <strong>식대 20%</strong>와,
+  급여가 아닌 항목(간병비·상급병실료 등)뿐입니다.
+</div>
+
+<h2>암이나 치매면 또 다릅니다</h2>
+<p>
+  질환에 따라 본인부담률이 크게 내려가는 경우가 있습니다.
+  아래는 <strong>의료급여 수급권자</strong> 기준입니다.
+</p>
+<div class="tw">
+<table>
+  <caption>의료급여 특정기호별 본인부담률 (건강보험심사평가원, {{ hospital.출처.의료급여.페이지_수정일 }} 수정)</caption>
+  <thead><tr><th>대상</th><th>본인부담률</th><th>표기</th></tr></thead>
+  <tbody>
+    {% for 대상, 률, 기호 in hospital.의료급여_특례 %}
+    <tr><td>{{ 대상 }}</td><td><strong>{{ 률 }}</strong></td><td class="sub-cell">{{ 기호 }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="fee-note">
+  건강보험 가입자도 <strong>암 등 중증질환 산정특례</strong>에 등록되면 요양급여비용총액의 <strong>5%</strong>,
+  희귀질환·중증난치질환은 <strong>10%</strong>입니다.
+  본인이 대상인지 모르시면 국민건강보험공단 <strong>1577-1000</strong>에 확인하세요.
+</p>
+
+<h2>간병비는 정해진 값이 없습니다</h2>
+<p>{{ hospital.간병비 }}</p>
+<div class="note">
+  <b>“나라에서 간병비를 지원해 준다던데요”</b><br>
+  조문에는 있습니다. 다만 <strong>“지급할 수 있다”</strong>는 임의 규정이라
+  조문이 있다는 것과 실제로 받는다는 것은 다릅니다.
+  지금 받을 수 있는지는 보건복지상담센터 <strong>129</strong>에 확인하셔야 합니다.
+</div>
+
+<h2>1년에 내는 돈에는 한도가 있습니다</h2>
+<p>{{ hospital.상한제_주의 }}</p>
+<p class="fee-note">
+  즉 <strong>같은 금액을 내도 요양병원에 120일 넘게 계셨는지에 따라 돌려받는 액수가 달라집니다.</strong>
+  장기 입원을 생각하고 계시면 이건 미리 알아두셔야 합니다.
+  (<a href="{{ hospital.출처.상한제.URL }}" rel="nofollow noopener" target="_blank">{{ hospital.출처.상한제.이름 }}</a>)
+</p>
+
+<h2>상담 때 이대로 물어보세요</h2>
+<p>병원에 전화하시거나 찾아가실 때, 이 다섯 개를 그대로 읽으시면 됩니다.</p>
+{% for 질문, 이유 in hospital.물어볼것 %}
+<div class="cmp">
+  <h3>{{ 질문 }}</h3>
+  <p class="cmp-src">{{ 이유 }}</p>
+</div>
+{% endfor %}
+
+<h2>이건 전화로 확인하셔야 합니다</h2>
+<p>
+  전국 공통 답이 없어서 이 글에 숫자를 적을 수 없는 것들입니다.
+  <strong>어디에 물어보면 되는지</strong>를 같이 적었습니다.
+</p>
+{% for x in hospital.확인못한것 %}
+<div class="unknown">
+  <h3>{{ x.무엇 }}</h3>
+  <p>{{ x.왜 }}</p>
+  <p><b>→ {{ x.어떻게 }}</b></p>
+</div>
+{% endfor %}
+
+<h2>요양원과 헷갈리신다면</h2>
+<p>
+  요양병원과 요양원은 이름만 비슷하고 제도가 아예 다릅니다.
+  요양원은 장기요양보험이라 <strong>등급만 정해지면 전국 어디나 하루 금액이 같습니다.</strong>
+</p>
+<p><a class="cta" href="/글/요양원-요양병원-차이">요양원과 요양병원의 차이 보기</a></p>
+
+<h2>자주 묻는 것</h2>
+<div class="qa">
+  {% for q, a in qa %}
+  <h3>{{ q }}</h3>
+  <p>{{ a }}</p>
+  {% endfor %}
+</div>
+
+<p class="fee-note">
+  이 글은 {{ 발행일 }}에 쓰고 {{ 갱신일 }}에 확인했습니다. 제도와 금액은 바뀝니다.
+  의료 판단은 하지 않습니다. 건강 문제는 진료하신 의사와 상의하세요.
+</p>
+{% endblock %}

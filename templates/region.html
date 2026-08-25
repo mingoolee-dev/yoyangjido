@@ -40,7 +40,7 @@
 <div class="chips">
   <a href="/시설/전북/군산시/" {% if not 유형 %}class="on"{% endif %}>전체<span class="n">{{ 총계 }}</span></a>
   {% for t, n in 유형별 %}
-  <a href="/시설/전북/군산시/?유형={{ t }}" {% if 유형 == t %}class="on"{% endif %}>{{ t }}<span class="n">{{ n }}</span></a>
+  <a href="{% if t in 경로유형 %}/시설/전북/군산시/{{ t }}/{% else %}/시설/전북/군산시/?유형={{ t }}{% endif %}" {% if 유형 == t %}class="on"{% endif %}>{{ t }}<span class="n">{{ n }}</span></a>
   {% endfor %}
 </div>
 

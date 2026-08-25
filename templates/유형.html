@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% set 현재단계 = "시설 선택" %}
+{% block title %}{{ 제목 }} | 요양지도{% endblock %}
+{% block desc %}{{ 요약 }}{% endblock %}
+
+{% block stamp %}
+<div class="wrap">
+  <p class="stamp">
+    기준일 {{ DATA_기준일 }} · 출처 {{ DATA_출처 }} ·
+    <a href="{{ DATA_URL }}" rel="nofollow">원문 보기</a>
+  </p>
+</div>
+{% endblock %}
+
+{% block content %}
+<p class="crumb">
+  <a href="/">요양지도</a> ›
+  <a href="/시설/전북/군산시/">군산시</a> › {{ 유형 }}
+</p>
+
+<h1>군산시 {{ 유형 }}</h1>
+
+<div class="answer">
+  <p><strong>전북특별자치도 군산시에 등록된 {{ 유형 }}은 {{ 총계 }}곳입니다.</strong>
+  {{ 유형설명 }}</p>
+  {% if 비용요약 %}<p>{{ 비용요약|safe }}</p>{% endif %}
+  <p class="answer-src">
+    출처 국민건강보험공단 장기요양기관 시설별 현황 · 기준일 {{ DATA_기준일 }} ·
+    이 페이지 최종 확인 {{ 갱신일 }}
+  </p>
+</div>
+
+{% if 비용표 %}
+<h2>{{ 유형 }} 비용은 이렇게 계산합니다</h2>
+<p>{{ 비용설명|safe }}</p>
+<div class="tw">
+<table>
+  <caption>{{ 비용표.제목 }} (기준일 {{ fees.기준일 }} · {{ fees.출처명 }})</caption>
+  <thead><tr>{% for h in 비용표.머리 %}<th{% if not loop.first %} class="n"{% endif %}>{{ h }}</th>{% endfor %}</tr></thead>
+  <tbody>
+    {% for 행 in 비용표.행 %}
+    <tr>{% for 칸 in 행 %}<td{% if not loop.first %} class="n"{% else %} class="nw"{% endif %}>{% if loop.last %}<strong>{{ 칸 }}</strong>{% else %}{{ 칸 }}{% endif %}</td>{% endfor %}</tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="fee-note">{{ 비용주의|safe }}</p>
+{% endif %}
+
+<h2>군산시 {{ 유형 }} {{ 총계 }}곳</h2>
+<p>공단에 등록된 곳 전부입니다. 정원이 큰 순서로 보여드립니다.</p>
+<ul class="list">
+  {% for r in rows %}
+  <li>
+    <a href="/시설/전북/군산시/{{ r.slug }}">
+      <span class="nm">{{ r.name }}</span>
+      <span class="meta">
+        {% if r.capacity %}정원 {{ r.capacity }}{% endif %}
+        {% if r.dong %} · {{ r.dong.split(' ')[-1] }}{% endif %}
+      </span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+
+<div class="note">
+  <b>정원은 최대 수용 인원입니다. 빈자리 수가 아닙니다.</b><br>
+  공단이 공개하는 자료에는 현재 몇 분이 계신지가 들어 있지 않습니다.
+  자리가 있는지는 시설에 전화로 물어보셔야 합니다.
+</div>
+
+<h2>다른 종류도 보시겠어요</h2>
+<div class="chips">
+  <a href="/시설/전북/군산시/">전체<span class="n">{{ 전체수 }}</span></a>
+  {% for t, n, 링크 in 다른유형 %}
+  <a href="{{ 링크 }}"{% if t == 유형 %} class="on"{% endif %}>{{ t }}<span class="n">{{ n }}</span></a>
+  {% endfor %}
+</div>
+
+{% if 다음글 %}
+<h2>{{ 다음글.제목 }}</h2>
+<p>{{ 다음글.설명 }}</p>
+<p><a class="cta" href="{{ 다음글.링크 }}">{{ 다음글.버튼 }}</a></p>
+{% endif %}
+{% endblock %}

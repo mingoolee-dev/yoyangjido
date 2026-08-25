@@ -250,3 +250,4 @@ td.nw,th.nw{white-space:nowrap}
           font-size:.97rem;color:var(--ink-2);line-height:1.75}
 .facts li:last-child{border-bottom:1px solid var(--rule-soft)}
 .facts b{display:block;color:var(--ink);font-weight:600;margin-bottom:.15rem}
+td .sub-cell,.sub-cell{font-size:.82rem;color:var(--ink-3);line-height:1.6}

@@ -6,13 +6,14 @@ from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import FastAPI, Request, Query
-from fastapi.responses import HTMLResponse, PlainTextResponse, Response
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 import compare
 import crawler
 import fees
+import hospital
 import seo
 
 BASE = Path(__file__).parent
@@ -20,7 +21,7 @@ DB = BASE / "yoyangjido.db"
 SITE = "요양지도"
 DOMAIN = "https://yoyangjido.com"
 DATA_기준일 = "2026-06-10"
-갱신일 = "2026-08-23"          # 페이지 하단·스키마에 노출. 손볼 때마다 올린다.
+갱신일 = "2026-08-24"          # 페이지 하단·스키마에 노출. 손볼 때마다 올린다.
 DATA_출처 = "국민건강보험공단 장기요양기관 시설별 현황"
 DATA_URL = "https://www.data.go.kr/data/15124763/fileData.do"
 네이버_소유확인 = "2c9d401492f180b478c418fc8ea419e927096426"   # 서치어드바이저 · 2026-08-23 등록. 1년마다 갱신 필요
@@ -38,19 +39,38 @@ DATA_URL = "https://www.data.go.kr/data/15124763/fileData.do"
     "방문간호": "간호사가 집으로 찾아와 간호를 해드립니다.",
     "복지용구": "휠체어·침대·기저귀 같은 용품을 급여로 사거나 빌리는 곳입니다.",
 }
+# 경로형 주소를 갖는 유형. 검색 수요가 확인된 것만 연다.
+# (Ahrefs 2026-08-24: 주야간보호·방문목욕·치매전담실은 검색량 0이라 열지 않았다)
+경로유형 = {
+    "요양원": "요양원",
+    "방문요양": "방문요양",
+}
+
+
 여정단계 = ["걱정 시작", "등급 신청", "시설 선택", "모시는 중", "그 이후"]
 
 app = FastAPI(title=SITE, docs_url=None, redoc_url=None)
+# 후행 슬래시 자동 리디렉션을 끈다.
+#   /시설/전북/군산시/요양원/   → 유형 페이지
+#   /시설/전북/군산시/은혜요양원-0462 → 시설 상세
+# 자동 리디렉션이 켜져 있으면 앞의 것이 뒤의 규칙으로 빨려 들어간다(2026-08-24 실제로 겪음).
+app.router.redirect_slashes = False
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 
 crawler.준비()
+crawler.방문_준비()
 
 
 @app.middleware("http")
-async def 크롤러_기록(request: Request, call_next):
-    """검색·AI 크롤러가 실제로 왔는지만 남긴다. 사람 방문자는 기록하지 않는다."""
-    crawler.기록(request.headers.get("user-agent", ""), request.url.path)
+async def 접속_기록(request: Request, call_next):
+    """크롤러가 왔는지, 그리고 사람이 몇 번 봤는지를 센다.
+    개인을 식별하지 않는다. IP도 쿠키도 남기지 않는다."""
+    ua = request.headers.get("user-agent", "")
+    crawler.기록(ua, request.url.path)
+    crawler.방문_기록(ua, request.url.path)
     return await call_next(request)
+
+
 tpl = Jinja2Templates(directory=BASE / "templates")
 tpl.env.filters["won"] = lambda v: f"{int(v):,}"
 tpl.env.filters["jsonld"] = lambda d: json.dumps(d, ensure_ascii=False, separators=(",", ":"))
@@ -75,7 +95,7 @@ def ctx(**kw):
         "DATA_기준일": DATA_기준일, "DATA_출처": DATA_출처, "DATA_URL": DATA_URL,
         "갱신일": 갱신일, "네이버_소유확인": 네이버_소유확인, "절대주소": 절대주소,
         # 기본은 색인 금지. 켤 페이지에서만 명시적으로 뒤집는다.
-        "색인": False, "canonical": None, "스키마": [],
+        "색인": False, "canonical": None, "스키마": [], "경로유형": 경로유형,
     }
     base.update(kw)
     return base
@@ -162,6 +182,102 @@ def region(request: Request, 유형: str = Query("", alias="유형")):
     return tpl.TemplateResponse(request, "region.html", ctx(
         rows=rows, 유형=유형, 유형별=순, 유형설명=유형설명, 총계=총계, seo=seo,
         색인=not 필터중, canonical="/시설/전북/군산시/", 스키마=스키마))
+
+
+def _유형_비용(유형):
+    """유형마다 비용 구조가 다르다. 같은 표를 돌려쓰지 않는다."""
+    if 유형 == "요양원":
+        표 = fees.노인요양시설
+        return {
+            "요약": (f"2026년 기준 한 달 본인부담금은 1등급 <strong>{표['1']['본인부담']*30:,}원</strong>, "
+                    f"2등급 {표['2']['본인부담']*30:,}원, 3·4·5등급 {표['3']['본인부담']*30:,}원입니다(30일 기준). "
+                    "여기에 식재료비 등 비급여가 따로 붙습니다."),
+            "설명": (f"급여비용의 <strong>{int(fees.시설급여_본인부담률*100)}%</strong>가 본인부담이고 "
+                    "나머지는 공단이 냅니다. 등급이 정해지면 <strong>전국 어디나 하루 금액이 같습니다.</strong>"),
+            "표": {"제목": "2026년 노인요양시설 하루·한 달 금액",
+                   "머리": ["등급", "수가(하루)", "본인부담(하루)", "본인부담(30일)"],
+                   "행": [[f"{g}등급", f"{표[g]['수가']:,}원", f"{표[g]['본인부담']:,}원",
+                          f"{표[g]['본인부담']*30:,}원"] for g in ("1","2","3","4","5")]},
+            "주의": ("이 표에 <strong>식재료비·상급침실료·이미용비는 들어 있지 않습니다.</strong> "
+                    "급여 대상이 아니라 전액 본인 부담이고 시설마다 다릅니다. "
+                    "상담하실 때 “비급여가 한 달에 얼마입니까”를 따로 물어보세요."),
+            "다음글": {"제목": "요양원과 요양병원이 헷갈리신다면",
+                      "설명": "이름은 비슷한데 제도도 비용 구조도 완전히 다릅니다.",
+                      "링크": "/글/요양원-요양병원-차이", "버튼": "차이 보기"},
+        }
+    if 유형 == "방문요양":
+        구간 = sorted(fees.방문요양.items())
+        return {
+            "요약": (f"요양보호사가 집으로 찾아옵니다. 2026년 기준 "
+                    f"{구간[0][0]}분 방문이 본인부담 <strong>{구간[0][1][1]:,}원</strong>, "
+                    f"{구간[-1][0]}분 방문이 {구간[-1][1][1]:,}원입니다."),
+            "설명": (f"재가급여는 급여비용의 <strong>{int(fees.재가급여_본인부담률*100)}%</strong>가 본인부담입니다. "
+                    "요양원(20%)보다 낮습니다. 다만 <strong>등급별 월 한도액</strong>이 있어서 "
+                    "그 안에서만 쓸 수 있습니다 — "
+                    f"1등급 {fees.재가_월한도액['1']:,}원, 3등급 {fees.재가_월한도액['3']:,}원, "
+                    f"5등급 {fees.재가_월한도액['5']:,}원."),
+            "표": {"제목": "2026년 방문요양 1회 방문 금액",
+                   "머리": ["방문 시간", "수가", "본인부담(15%)"],
+                   "행": [[f"{분}분", f"{v[0]:,}원", f"{v[1]:,}원"] for 분, v in 구간]},
+            "주의": ("월 한도액을 넘겨 쓰시면 <strong>넘긴 부분은 전액 본인 부담</strong>입니다. "
+                    "한 달에 몇 번 오시게 할지는 한도액을 보고 정하셔야 합니다."),
+            "다음글": {"제목": "시설에 모시는 쪽도 알아보고 계시다면",
+                      "설명": "요양원은 24시간 모시는 곳이고 계산 방식이 다릅니다.",
+                      "링크": "/시설/전북/군산시/요양원/", "버튼": "군산시 요양원 보기"},
+        }
+    return {}
+
+
+@app.get("/시설/전북/군산시", response_class=HTMLResponse)
+def region_no_slash():
+    return RedirectResponse("/시설/전북/군산시/", status_code=301)
+
+
+@app.get("/시설/전북/군산시/{kind}/", response_class=HTMLResponse)
+def 유형페이지(request: Request, kind: str):
+    # 경로 파라미터 이름은 반드시 ASCII여야 한다.
+    # Starlette는 {유형} 같은 한글 이름을 파라미터로 인식하지 못하고
+    # 문자 그대로의 경로로 취급한다(2026-08-24 실제로 겪음).
+    유형 = kind
+    if 유형 not in 경로유형:
+        con = db()
+        있음 = con.execute("SELECT 1 FROM facility_type WHERE type = ? LIMIT 1", (유형,)).fetchone()
+        con.close()
+        # 검색 수요가 없어 페이지를 열지 않은 유형은 원본 목록으로 넘긴다.
+        if 있음:
+            return RedirectResponse(f"/시설/전북/군산시/?유형={quote(유형)}", status_code=301)
+        return HTMLResponse(tpl.get_template("404.html").render(ctx()), status_code=404)
+
+    con = db()
+    rows = con.execute("""
+        SELECT f.*, t.capacity FROM facility f
+        JOIN facility_type t ON t.code = f.code AND t.type = ?
+        ORDER BY t.capacity DESC, f.name""", (유형,)).fetchall()
+    유형별 = {r["type"]: r["c"] for r in con.execute(
+        "SELECT type, COUNT(*) c FROM facility_type GROUP BY type")}
+    전체수 = con.execute("SELECT COUNT(*) c FROM facility").fetchone()["c"]
+    con.close()
+
+    b = _유형_비용(유형)
+    다른유형 = [(t, 유형별[t],
+                f"/시설/전북/군산시/{quote(t)}/" if t in 경로유형 else f"/시설/전북/군산시/?유형={quote(t)}")
+              for t in 유형순서 if t in 유형별]
+
+    제목 = f"군산시 {유형} {len(rows)}곳 — 정원·비용 한 번에"
+    요약 = (f"군산시 {유형} {len(rows)}곳 전체 목록. 국민건강보험공단 공개 자료 기준. "
+            f"2026년 수가로 본인부담금을 함께 정리했습니다.")
+    경로 = f"/시설/전북/군산시/{유형}/"
+
+    return tpl.TemplateResponse(request, "유형.html", ctx(
+        rows=rows, 유형=유형, 총계=len(rows), 전체수=전체수, 다른유형=다른유형,
+        유형설명=유형설명.get(유형, ""), fees=fees,
+        비용요약=b.get("요약"), 비용설명=b.get("설명"),
+        비용표=b.get("표"), 비용주의=b.get("주의"), 다음글=b.get("다음글"),
+        제목=제목, 요약=요약, 색인=True, canonical=경로,
+        스키마=[seo.데이터셋_스키마(DATA_기준일, DATA_URL, len(rows)),
+              seo.이동경로_스키마([("요양지도", "/"),
+                              ("군산시 요양시설", "/시설/전북/군산시/"),
+                              (f"군산시 {유형}", 경로)])]))
 
 
 @app.get("/시설/전북/군산시/{slug}", response_class=HTMLResponse)
@@ -255,6 +371,70 @@ def 글_요양원_요양병원(request: Request):
                               ("요양원과 요양병원의 차이", "/글/요양원-요양병원-차이")])]))
 
 
+@app.get("/글/요양병원-한달-비용", response_class=HTMLResponse)
+def 글_요양병원_비용(request: Request):
+    """검색량이 가장 큰 주제(요양병원 한달 비용 계열 월 2,400회, Ahrefs 2026-08-24).
+    FAQ 항목은 실제 검색어에서 뽑았다 — 기초생활수급자·암·치매·간병비."""
+    발행일 = "2026-08-24"
+
+    qa = [
+        ("요양병원 한 달 비용은 얼마인가요?",
+         "전국 공통 금액이 없습니다. 요양원처럼 등급별로 정해진 하루 금액이 있는 것이 아니라, "
+         "그 달에 발생한 요양급여비용총액에 본인부담률을 곱하는 방식이기 때문입니다. "
+         "건강보험 가입자는 일반환자가 요양급여비용총액의 20%, 선택입원군으로 분류되면 40%이고, "
+         "식대는 별도로 50%를 냅니다. 여기에 간병비가 대부분 전액 본인 부담으로 추가됩니다. "
+         "출처: 건강보험심사평가원 건강보험 본인부담기준 안내(2026-06-23 수정)."),
+        ("기초생활수급자는 요양병원 비용이 얼마인가요?",
+         "의료급여 1종 수급권자는 제1·2·3차 의료급여기관 입원 진료비가 무료입니다. "
+         "식대만 20%를 부담합니다. 2종 수급권자는 의료급여비용총액의 10%이며, "
+         "2종 장애인은 장애인 의료비로 지원되어 무료입니다. "
+         "다만 간병비와 상급병실료처럼 급여가 아닌 항목은 별도로 부담하셔야 합니다. "
+         "출처: 건강보험심사평가원 의료급여 본인부담기준 안내(2026-07-30 수정)."),
+        ("'선택입원군'이 무슨 뜻인가요?",
+         "건강보험심사평가원 본인부담 안내표에 나오는 요양병원 환자 분류 중 하나입니다. "
+         "여기에 해당하면 본인부담률이 요양급여비용총액의 40%가 되어 일반환자 20%의 두 배가 됩니다. "
+         "같은 병실에서 같은 치료를 받아도 이 분류에 따라 내는 금액이 달라지므로, "
+         "입원 상담에서 '저희 부모님은 어느 환자분류군으로 잡힙니까'를 반드시 물어보셔야 합니다."),
+        ("암 환자는 요양병원 비용이 다른가요?",
+         "다릅니다. 건강보험 가입자가 암 등 중증질환으로 산정특례에 등록되면 "
+         "본인부담률이 요양급여비용총액의 5%로 내려갑니다. "
+         "의료급여 수급권자도 중증질환자로 등록되면 5%이며, "
+         "뇌혈관질환·심장질환·중증외상 중증질환자(2종)는 무료입니다. "
+         "본인이 산정특례 대상인지는 국민건강보험공단 1577-1000에서 확인할 수 있습니다."),
+        ("치매 환자는 어떻게 되나요?",
+         "의료급여 2종 수급권자 중 치매질환자로 등록된 경우(특정기호 V800·V810) "
+         "본인부담률이 의료급여비용총액의 5%입니다. "
+         "건강보험 가입자의 치매는 별도의 일괄 감면이 아니라 산정특례 등록 여부에 따라 달라지므로 "
+         "공단에 개별 확인이 필요합니다."),
+        ("요양병원에 오래 입원하면 비용이 더 드나요?",
+         "본인부담률이 올라갑니다. 16일 이상 입원하면 입원료 본인부담률이 "
+         "16~30일은 5%, 31일 이상은 10% 상향됩니다. "
+         "다만 장기입원이 불가피한 환자, 보훈, 산정특례, 차상위 본인부담경감 환자는 제외됩니다. "
+         "또 본인부담액상한제에서도 요양병원 입원일수가 120일을 넘는지에 따라 "
+         "소득 1~5분위의 상한액이 달라집니다. "
+         "근거: 국민건강보험법 시행령 별표2 제5호."),
+        ("간병비는 얼마나 드나요?",
+         "정해진 금액이 없습니다. 간병비는 건강보험 급여가 아니어서 수가 자체가 존재하지 않고, "
+         "병원이 정한 값이 곧 가격입니다. 개인 간병과 공동 간병은 단가가 크게 다르므로 "
+         "입원하실 병원에 둘 다 하루 얼마인지 직접 물어보셔야 합니다. "
+         "노인장기요양보험법 제26조에 '요양병원간병비' 조문이 있으나 '지급할 수 있다'는 임의 규정입니다."),
+    ]
+
+    인용 = [v["URL"] for v in hospital.출처.values()]
+    제목 = "요양병원 한 달 비용, 실제로 얼마나 드나요 (2026년 기준)"
+    요약 = ("요양병원은 전국 공통 금액이 없습니다. 일반환자는 요양급여비용총액의 20%, "
+            "선택입원군은 40%, 식대는 50%입니다. 의료급여 1종은 진료비가 무료이고 식대 20%만 냅니다. "
+            "심평원 자료로 확인한 것과 확인하지 못한 것을 나눠 적었습니다.")
+
+    return tpl.TemplateResponse(request, "글_요양병원_비용.html", ctx(
+        hospital=hospital, qa=qa, 발행일=발행일, 제목=제목, 요약=요약,
+        색인=True, canonical="/글/요양병원-한달-비용",
+        스키마=[seo.글_스키마(제목, 요약, "/글/요양병원-한달-비용", 발행일, 갱신일, 인용),
+              seo.질문답변_스키마(qa),
+              seo.이동경로_스키마([("요양지도", "/"),
+                              ("요양병원 한 달 비용", "/글/요양병원-한달-비용")])]))
+
+
 @app.get("/robots.txt", response_class=PlainTextResponse)
 def robots():
     return "\n".join([
@@ -295,7 +475,9 @@ def sitemap():
     urls = [("/", "1.0"),
             ("/계산기/요양원-본인부담금", "0.9"),
             ("/글/요양원-요양병원-차이", "0.9"),
+            ("/글/요양병원-한달-비용", "0.9"),
             ("/시설/전북/군산시/", "0.8")]
+    urls += [(f"/시설/전북/군산시/{t}/", "0.7") for t in 경로유형]
     con = db()
     for f in con.execute("SELECT * FROM facility"):
         ok, _ = seo.시설_색인여부(f)
@@ -358,6 +540,23 @@ def 크롤러_기록보기():
         줄.append("-" * 62)
         for r in 행:
             줄.append(f"{r['이름']:<22}{r['횟수']:>6}   {r['처음']:<17}{r['마지막']:<17}{r['마지막경로']}")
+    return "\n".join(줄) + "\n"
+
+
+@app.get("/setup-8f3a91c40b/방문", response_class=PlainTextResponse)
+def 방문현황():
+    """사람이 몇 번 봤는가. 광고주에게 보여줄 근거가 되는 숫자다."""
+    달들 = crawler.방문_요약()
+    줄 = [f"요양지도 페이지 조회 수  ({datetime.now(crawler.KST):%Y-%m-%d %H:%M} KST)",
+          "=" * 62,
+          "순 방문자가 아니라 '페이지 조회 수'입니다. 개인을 식별하지 않습니다.", ""]
+    if not 달들:
+        줄.append("아직 사람이 다녀간 기록이 없습니다.")
+    for m in 달들:
+        줄.append(f"[{m['달']}]  합계 {m['합계']:,}회")
+        for 경로, n in m["상위"]:
+            줄.append(f"      {n:>6,}  {경로}")
+        줄.append("")
     return "\n".join(줄) + "\n"
 
 

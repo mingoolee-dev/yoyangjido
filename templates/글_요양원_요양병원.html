@@ -2,6 +2,7 @@
 {% block title %}{{ 제목 }} — 요양지도{% endblock %}
 {% block desc %}{{ 요약 }}{% endblock %}
 
+{% import "_광고.html" as 광고 with context %}
 {% block content %}
 <h1>요양원과 요양병원, 뭐가 다르고<br>한 달에 얼마나 차이 납니까</h1>
 
@@ -118,6 +119,8 @@
   (<a href="{{ compare.출처.공단_상한제.URL }}" rel="nofollow noopener" target="_blank">{{ compare.출처.공단_상한제.이름 }}</a>)
 </p>
 
+{{ 광고.자리("차이:요양원:1") }}
+
 <h2>깎아주는 제도</h2>
 <p>요양원 쪽 본인부담금은 감경 제도가 있습니다.</p>
 <ul>
@@ -158,6 +161,8 @@
   <p><b>→ {{ x.어떻게 }}</b></p>
 </div>
 {% endfor %}
+
+{{ 광고.자리("차이:요양원:2") }}
 
 <h2>자주 묻는 것</h2>
 <div class="qa">

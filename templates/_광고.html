@@ -1,0 +1,30 @@
+{# 제휴 배너 자리.
+   빈 자리를 비워두지 않는다. 빈 자리가 24시간 대신 영업한다.
+   유료 링크에는 반드시 rel="nofollow sponsored"를 단다(구글 정책).
+   배너에는 반드시 '광고'라고 적는다. 정보인 척하지 않는다. #}
+{% macro 자리(키) %}
+{% set 광고 = 광고자리(키) %}
+{% set 정의 = 광고정의.get(키) %}
+{% if 광고 %}
+<div class="adx">
+  <span class="adx-tag">광고</span>
+  <div class="adx-body">
+    <b>{{ 광고.업체명 }}</b>
+    {% if 광고.한줄 %}<span class="adx-line">{{ 광고.한줄 }}</span>{% endif %}
+  </div>
+  <div class="adx-act">
+    {% if 광고.전화 %}<a class="adx-tel" href="tel:{{ 광고.전화|replace('-','') }}">{{ 광고.전화 }}</a>{% endif %}
+    {% if 광고.링크 %}<a class="adx-go" href="/광고/{{ 광고.id }}" rel="nofollow sponsored noopener" target="_blank">홈페이지</a>{% endif %}
+  </div>
+</div>
+{% elif 정의 %}
+<a class="adx adx-empty" href="/광고안내">
+  <span class="adx-tag">광고 자리</span>
+  <div class="adx-body">
+    <b>{{ 정의.대상 }}을 찾습니다</b>
+    <span class="adx-line">이 자리에 업체 정보를 걸 수 있습니다. 조회 수를 공개하고, 순위는 팔지 않습니다.</span>
+  </div>
+  <div class="adx-act"><span class="adx-go">광고 안내 보기</span></div>
+</a>
+{% endif %}
+{% endmacro %}

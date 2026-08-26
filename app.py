@@ -96,6 +96,22 @@ def 절대주소(경로: str) -> str:
     return DOMAIN + quote(경로, safe="/")
 
 
+def _조사(말: str, 쌍: str = "을/를") -> str:
+    """받침 유무에 따라 을/를, 이/가, 은/는을 고른다.
+    '간병 업체을 찾습니다' 같은 실수를 코드가 막는다."""
+    있, 없 = 쌍.split("/")
+    if not 말:
+        return 없
+    끝 = 말.strip()[-1]
+    if not ("가" <= 끝 <= "힣"):
+        return 없
+    받침 = (ord(끝) - 0xAC00) % 28
+    return 있 if 받침 else 없
+
+
+tpl.env.filters["조사"] = _조사
+
+
 def ctx(**kw):
     base = {
         "SITE": SITE, "DOMAIN": DOMAIN, "여정단계": 여정단계,

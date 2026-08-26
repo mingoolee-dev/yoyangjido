@@ -22,21 +22,35 @@ import urllib.request
 
 
 def _보내기_ntfy(주제: str, 제목: str, 본문: str, 링크: str = "") -> tuple[bool, str]:
+    """ntfy에 JSON으로 보낸다.
+
+    헤더 방식(Title: ...)을 쓰지 않는 이유:
+      HTTP 헤더는 latin-1만 담을 수 있어서 한글 제목을 그대로 못 넣는다.
+      퍼센트 인코딩해서 넣었더니 폰에 '%EC%9A%94...'로 그대로 떴다(2026-08-26 실제로 겪음).
+      ntfy는 JSON 본문 발행도 받는다. 그쪽은 UTF-8이 그대로 통한다.
+
+    priority 5(최대)를 쓰는 이유:
+      문의는 한 달에 몇 건 안 온다. 대신 하나를 놓치면 그게 곧 손해다.
+      드물고 값진 알림이니 확실히 눈에 띄게 보낸다.
+    """
     if not 주제:
         return False, "주제가 비어 있음"
-    머리 = {
-        "Title": urllib.parse.quote(제목),   # 한글 제목은 인코딩해야 통과한다
-        "Priority": "high",
-        "Tags": "envelope",
+    꾸러미 = {
+        "topic": 주제,
+        "title": 제목,
+        "message": 본문,
+        "priority": 5,
+        "tags": ["envelope"],
     }
     if 링크:
-        # HTTP 헤더는 latin-1만 담을 수 있다. 한글이 든 주소는 미리 인코딩한다.
-        머리["Click"] = urllib.parse.quote(링크, safe=":/?=&#")
+        꾸러미["click"] = urllib.parse.quote(링크, safe=":/?=&#")
     요청 = urllib.request.Request(
-        f"https://ntfy.sh/{urllib.parse.quote(주제)}",
-        data=본문.encode("utf-8"), headers=머리, method="POST")
+        "https://ntfy.sh/",
+        data=json.dumps(꾸러미, ensure_ascii=False).encode("utf-8"),
+        headers={"Content-Type": "application/json; charset=utf-8"},
+        method="POST")
     try:
-        with urllib.request.urlopen(요청, timeout=6) as r:
+        with urllib.request.urlopen(요청, timeout=8) as r:
             return (200 <= r.status < 300), f"HTTP {r.status}"
     except Exception as e:
         return False, str(e)[:120]

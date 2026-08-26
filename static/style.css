@@ -281,3 +281,21 @@ td .sub-cell,.sub-cell{font-size:.82rem;color:var(--ink-3);line-height:1.6}
 .adsell td.n{text-align:right;font-family:var(--mono);white-space:nowrap}
 .adsell .sold{color:var(--ink-3)}
 .adsell .free{color:var(--accent);font-weight:600}
+
+/* 광고 문의 양식 */
+.inq{font-family:var(--sans);margin:20px 0 8px}
+.inq label{display:block;margin:16px 0 6px;font-size:14px;color:var(--ink-2)}
+.inq .req{color:var(--ad)}
+.inq input[type=text],.inq input[type=tel],.inq input[type=email],
+.inq select,.inq textarea{
+  width:100%;box-sizing:border-box;font-family:var(--sans);font-size:15px;
+  color:var(--ink);background:var(--surface);
+  border:1px solid var(--rule);border-radius:8px;padding:11px 12px}
+.inq textarea{resize:vertical;line-height:1.6}
+.inq input:focus,.inq select:focus,.inq textarea:focus{
+  outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.inq .two{display:flex;gap:14px;flex-wrap:wrap}
+.inq .two>div{flex:1 1 200px}
+.inq .hint{margin:8px 0 0;font-size:13px;color:var(--ink-3)}
+.inq button{margin-top:20px}
+.inq .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}

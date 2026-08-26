@@ -251,3 +251,33 @@ td.nw,th.nw{white-space:nowrap}
 .facts li:last-child{border-bottom:1px solid var(--rule-soft)}
 .facts b{display:block;color:var(--ink);font-weight:600;margin-bottom:.15rem}
 td .sub-cell,.sub-cell{font-size:.82rem;color:var(--ink-3);line-height:1.6}
+
+/* ── 제휴 배너 자리 ──────────────────────────────────────────
+   '광고'임이 한눈에 보여야 한다. 정보인 척하는 배너는 만들지 않는다.
+   그래서 전용색(--ad)을 쓰고, 본문 활자와 다른 산세리프로 짠다. */
+.adx{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+     font-family:var(--sans);
+     border:1px solid var(--rule-soft);border-radius:10px;
+     padding:14px 16px;margin:24px 0;background:var(--surface);
+     text-decoration:none;color:inherit}
+.adx-tag{flex:none;font-family:var(--mono);font-size:11px;letter-spacing:.04em;
+     color:var(--ad);background:var(--ad-soft);border-radius:4px;padding:3px 7px}
+.adx-body{flex:1 1 240px;min-width:0}
+.adx-body b{display:block;font-size:15px;font-weight:600;color:var(--ink)}
+.adx-line{display:block;margin-top:4px;font-size:13px;color:var(--ink-3);line-height:1.55}
+.adx-act{flex:none;display:flex;gap:10px;align-items:center}
+.adx-tel{font-family:var(--mono);font-size:14px;color:var(--ink);
+     text-decoration:none;border-bottom:1px solid var(--rule)}
+.adx-go{font-size:13px;color:var(--accent);text-decoration:none;white-space:nowrap}
+.adx-empty{border-style:dashed;background:transparent}
+.adx-empty:hover{background:var(--surface);border-color:var(--accent)}
+@media (max-width:560px){.adx{padding:12px 13px}.adx-act{width:100%}}
+
+/* 광고 안내 페이지 */
+.adsell table{width:100%;border-collapse:collapse;margin:18px 0;font-family:var(--sans)}
+.adsell th,.adsell td{border-bottom:1px solid var(--rule-soft);padding:9px 8px;
+     font-size:14px;text-align:left}
+.adsell th{color:var(--ink-3);font-weight:500;font-size:13px}
+.adsell td.n{text-align:right;font-family:var(--mono);white-space:nowrap}
+.adsell .sold{color:var(--ink-3)}
+.adsell .free{color:var(--accent);font-weight:600}

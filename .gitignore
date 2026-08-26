@@ -4,3 +4,4 @@ __pycache__/
 yoyangjido.db
 server.log
 crawler.db
+ads.db

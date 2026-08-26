@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse,
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+import ads
 import caregiving
 import compare
 import crawler
@@ -25,6 +26,10 @@ DATA_기준일 = "2026-06-10"
 갱신일 = "2026-08-25"          # 페이지 하단·스키마에 노출. 손볼 때마다 올린다.
 DATA_출처 = "국민건강보험공단 장기요양기관 시설별 현황"
 DATA_URL = "https://www.data.go.kr/data/15124763/fileData.do"
+# 광고 문의 창구. 비워두면 광고안내 페이지가 "준비 중"으로 나간다.
+# 공개 페이지에 실릴 값이라 형님 확인 없이 채우지 않는다.
+광고문의 = ""
+
 네이버_소유확인 = "2c9d401492f180b478c418fc8ea419e927096426"   # 서치어드바이저 · 2026-08-23 등록. 1년마다 갱신 필요
 
 유형순서 = ["요양원", "공동생활가정", "치매전담실", "주야간보호", "단기보호",
@@ -60,6 +65,7 @@ app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 
 crawler.준비()
 crawler.방문_준비()
+ads.준비()
 
 
 @app.middleware("http")
@@ -97,6 +103,8 @@ def ctx(**kw):
         "갱신일": 갱신일, "네이버_소유확인": 네이버_소유확인, "절대주소": 절대주소,
         # 기본은 색인 금지. 켤 페이지에서만 명시적으로 뒤집는다.
         "색인": False, "canonical": None, "스키마": [], "경로유형": 경로유형,
+        # 배너 자리. 광고가 걸려 있으면 노출을 세고, 없으면 '이 자리 문의'가 뜬다.
+        "광고자리": _광고자리, "광고정의": ads.자리표, "광고문의": 광고문의,
     }
     base.update(kw)
     return base
@@ -269,8 +277,12 @@ def 유형페이지(request: Request, kind: str):
             f"2026년 수가로 본인부담금을 함께 정리했습니다.")
     경로 = f"/시설/전북/군산시/{유형}/"
 
+    # 유형마다 광고 자리가 다르다. 요양원 자리에 재가센터를 걸지 않는다.
+    광고키 = {"요양원": "군산요양원:요양원", "방문요양": "군산방문요양:재가"}.get(유형, "")
+
     return tpl.TemplateResponse(request, "유형.html", ctx(
         rows=rows, 유형=유형, 총계=len(rows), 전체수=전체수, 다른유형=다른유형,
+        광고키=광고키,
         유형설명=유형설명.get(유형, ""), fees=fees,
         비용요약=b.get("요약"), 비용설명=b.get("설명"),
         비용표=b.get("표"), 비용주의=b.get("주의"), 다음글=b.get("다음글"),
@@ -539,7 +551,9 @@ def sitemap():
             ("/글/요양원-요양병원-차이", "0.9"),
             ("/글/요양병원-한달-비용", "0.9"),
             ("/글/간병비", "0.9"),
-            ("/시설/전북/군산시/", "0.8")]
+            ("/시설/전북/군산시/", "0.8"),
+            # 광고주(요양원·간병업체)가 검색으로 찾아와야 하는 페이지다.
+            ("/광고안내", "0.6")]
     urls += [(f"/시설/전북/군산시/{t}/", "0.7") for t in 경로유형]
     con = db()
     for f in con.execute("SELECT * FROM facility"):
@@ -620,6 +634,54 @@ def 방문현황():
         for 경로, n in m["상위"]:
             줄.append(f"      {n:>6,}  {경로}")
         줄.append("")
+    return "\n".join(줄) + "\n"
+
+
+def _광고자리(키: str):
+    """자리에 걸린 광고를 꺼내면서 노출을 1 센다.
+    광고주에게 '지난달 노출 몇 회'를 못 보여주면 재계약이 안 된다."""
+    걸린것 = ads.자리(키)
+    if 걸린것:
+        ads.노출(걸린것["id"])
+    return 걸린것
+
+
+@app.get("/광고/{ad_id}")
+def 광고_클릭(ad_id: int):
+    """유료 링크는 우리 주소를 한 번 거쳐 나간다. 클릭을 세기 위해서다.
+    경로 파라미터 이름은 반드시 ASCII다. {게재id}로 쓰면 Starlette가
+    파라미터로 인식하지 못하고 문자 그대로의 경로로 취급한다(2026-08-24, 08-26 두 번 겪음)."""
+    주소 = ads.클릭(ad_id)
+    if not 주소:
+        return RedirectResponse("/광고안내", status_code=302)
+    return RedirectResponse(주소, status_code=302)
+
+
+@app.get("/광고안내", response_class=HTMLResponse)
+def 광고안내(request: Request):
+    현황 = ads.전체현황()
+    재고 = ads.재고()
+    이번달 = crawler.방문_요약(1)
+    월조회 = 이번달[0]["합계"] if 이번달 else 0
+    return tpl.TemplateResponse(request, "광고안내.html", ctx(
+        현황=현황, 재고=재고, 월조회=월조회,
+        유료개시=ads.유료개시_월조회,
+        색인=True, canonical="/광고안내",
+        스키마=[seo.이동경로_스키마([("요양지도", "/"), ("광고 안내", "/광고안내")])]))
+
+
+@app.get("/setup-8f3a91c40b/광고", response_class=PlainTextResponse)
+def 광고현황():
+    줄 = [f"요양지도 배너 자리 현황  ({datetime.now().strftime('%Y-%m-%d %H:%M')})",
+          "=" * 74]
+    r = ads.재고()
+    줄.append(f"자리 {r['총자리']}개 · 판매 {r['판매됨']} · 빈자리 {r['빈자리']}")
+    줄.append(f"다 팔면 월 {r['정가합계']:,}원 · 지금 비어 있는 값 월 {r['미판매액']:,}원")
+    줄.append("-" * 74)
+    줄.append(f"{'자리':<26}{'대상':<22}{'월단가':>9}  {'업체':<12}{'노출':>6}{'클릭':>6}")
+    for x in ads.전체현황():
+        줄.append(f"{x['키']:<26}{x['대상']:<22}{x['월단가']:>9,}  "
+                  f"{(x['업체'] or '— 빈자리'):<12}{x['성과']['노출']:>6}{x['성과']['클릭']:>6}")
     return "\n".join(줄) + "\n"
 
 

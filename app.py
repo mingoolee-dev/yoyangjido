@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
 
-from fastapi import FastAPI, Form, Request, Query
+from fastapi import FastAPI, Request, Query
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -689,11 +689,13 @@ def 광고안내(request: Request, 접수: str = Query("")):
 
 
 @app.post("/광고문의")
-def 광고문의_접수(업체명: str = Form(""), 자리: str = Form(""),
-               전화: str = Form(""), 이메일: str = Form(""),
-               한줄: str = Form(""), 하실말씀: str = Form(""),
-               홈페이지: str = Form("")):
+async def 광고문의_접수(request: Request):
     """광고 문의를 받는다.
+
+    FastAPI의 Form(...)을 쓰지 않는 이유:
+      Form(...)은 python-multipart 패키지를 요구하는데, 서버 requirements.txt에
+      그게 없어서 앱이 통째로 못 뜨고 502가 났다(2026-08-26 실제로 겪음).
+      urlencoded 본문은 Starlette가 추가 패키지 없이 읽을 수 있다. 그래서 직접 읽는다.
 
     스팸을 막는 방법 세 가지. 사람에게는 아무것도 요구하지 않는다.
       1) 숨긴 칸(홈페이지) — 화면에 안 보이니 사람은 못 채운다. 로봇은 채운다.
@@ -701,15 +703,21 @@ def 광고문의_접수(업체명: str = Form(""), 자리: str = Form(""),
       3) 최소 조건 — 업체명과 연락처(전화 또는 메일) 중 하나는 있어야 한다.
     글자 맞추기(캡차)는 넣지 않는다. 어르신 시설 원장님들을 돌려보내게 된다.
     """
-    if 홈페이지.strip():
+    양식 = await request.form()
+
+    def 값(이름: str) -> str:
+        return str(양식.get(이름, "") or "").strip()
+
+    if 값("홈페이지"):
         return RedirectResponse("/광고안내?접수=1", status_code=303)   # 조용히 버린다
     if ads.최근_문의_수(60) >= 20:
         return RedirectResponse("/광고안내?접수=혼잡", status_code=303)
-    if not 업체명.strip() or not (전화.strip() or 이메일.strip()):
+
+    업체명, 전화, 이메일 = 값("업체명"), 값("전화"), 값("이메일")
+    if not 업체명 or not (전화 or 이메일):
         return RedirectResponse("/광고안내?접수=부족", status_code=303)
 
-    번호 = ads.문의_저장(업체명.strip(), 자리.strip(), 전화.strip(),
-                      이메일.strip(), 한줄.strip(), 하실말씀.strip())
+    번호 = ads.문의_저장(업체명, 값("자리"), 전화, 이메일, 값("한줄"), 값("하실말씀"))
 
     # 알림은 실패해도 접수는 성공이어야 한다.
     # 상세 내용은 보내지 않는다. "몇 번 문의가 들어왔다"까지만.

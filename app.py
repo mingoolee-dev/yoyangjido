@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
 
-from fastapi import FastAPI, Request, Query
+from fastapi import FastAPI, Form, Request, Query
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -16,6 +16,7 @@ import compare
 import crawler
 import fees
 import hospital
+import notify
 import seo
 
 BASE = Path(__file__).parent
@@ -66,6 +67,7 @@ app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 crawler.준비()
 crawler.방문_준비()
 ads.준비()
+ads.문의_준비()
 
 
 @app.middleware("http")
@@ -674,16 +676,119 @@ def 광고_클릭(ad_id: int):
 
 
 @app.get("/광고안내", response_class=HTMLResponse)
-def 광고안내(request: Request):
+def 광고안내(request: Request, 접수: str = Query("")):
     현황 = ads.전체현황()
     재고 = ads.재고()
     이번달 = crawler.방문_요약(1)
     월조회 = 이번달[0]["합계"] if 이번달 else 0
     return tpl.TemplateResponse(request, "광고안내.html", ctx(
-        현황=현황, 재고=재고, 월조회=월조회,
+        현황=현황, 재고=재고, 월조회=월조회, 접수=접수,
         유료개시=ads.유료개시_월조회,
         색인=True, canonical="/광고안내",
         스키마=[seo.이동경로_스키마([("요양지도", "/"), ("광고 안내", "/광고안내")])]))
+
+
+@app.post("/광고문의")
+def 광고문의_접수(업체명: str = Form(""), 자리: str = Form(""),
+               전화: str = Form(""), 이메일: str = Form(""),
+               한줄: str = Form(""), 하실말씀: str = Form(""),
+               홈페이지: str = Form("")):
+    """광고 문의를 받는다.
+
+    스팸을 막는 방법 세 가지. 사람에게는 아무것도 요구하지 않는다.
+      1) 숨긴 칸(홈페이지) — 화면에 안 보이니 사람은 못 채운다. 로봇은 채운다.
+      2) 시간당 상한 — 한 시간에 20건이 넘으면 자동 제출로 본다.
+      3) 최소 조건 — 업체명과 연락처(전화 또는 메일) 중 하나는 있어야 한다.
+    글자 맞추기(캡차)는 넣지 않는다. 어르신 시설 원장님들을 돌려보내게 된다.
+    """
+    if 홈페이지.strip():
+        return RedirectResponse("/광고안내?접수=1", status_code=303)   # 조용히 버린다
+    if ads.최근_문의_수(60) >= 20:
+        return RedirectResponse("/광고안내?접수=혼잡", status_code=303)
+    if not 업체명.strip() or not (전화.strip() or 이메일.strip()):
+        return RedirectResponse("/광고안내?접수=부족", status_code=303)
+
+    번호 = ads.문의_저장(업체명.strip(), 자리.strip(), 전화.strip(),
+                      이메일.strip(), 한줄.strip(), 하실말씀.strip())
+
+    # 알림은 실패해도 접수는 성공이어야 한다.
+    # 상세 내용은 보내지 않는다. "몇 번 문의가 들어왔다"까지만.
+    설정 = {
+        "채널": ads.설정_읽기("알림채널", "없음"),
+        "주제": ads.설정_읽기("ntfy주제", ""),
+        "토큰": ads.설정_읽기("텔레그램토큰", ""),
+        "방": ads.설정_읽기("텔레그램방", ""),
+    }
+    보냄, 사유 = notify.알림(
+        설정,
+        "요양지도 · 새 광고 문의",
+        f"{번호}번 문의가 들어왔습니다. 관리 화면에서 확인하세요.",
+        f"{DOMAIN}/setup-8f3a91c40b/문의")
+    ads.설정_쓰기("마지막알림", f"{번호}번 · {'보냄' if 보냄 else '실패'} · {사유}")
+
+    return RedirectResponse("/광고안내?접수=1", status_code=303)
+
+
+@app.get("/setup-8f3a91c40b/문의", response_class=PlainTextResponse)
+def 문의현황(읽음: str = Query("")):
+    if 읽음 == "처리":
+        n = ads.문의_읽음처리()
+        return f"{n}건을 읽음으로 바꿨습니다.\n"
+    목록 = ads.문의_목록()
+    줄 = [f"요양지도 광고 문의  ({datetime.now().strftime('%Y-%m-%d %H:%M')})",
+          "=" * 74,
+          f"전체 {len(목록)}건 · 안읽음 {ads.문의_안읽음()}건",
+          f"마지막 알림: {ads.설정_읽기('마지막알림', '아직 없음')}",
+          "전부 읽음으로 바꾸려면 이 주소 뒤에 ?읽음=처리 를 붙이세요.",
+          "-" * 74]
+    if not 목록:
+        줄.append("아직 들어온 문의가 없습니다.")
+    for m in 목록:
+        줄 += [
+            f"[{m['id']}] {m['받은때']}  {m['상태']}",
+            f"  업체   {m['업체명']}",
+            f"  자리   {m['자리키'] or '(안 고름)'}",
+            f"  연락   {m['전화'] or '-'} / {m['이메일'] or '-'}",
+            f"  한줄   {m['한줄'] or '-'}",
+            f"  말씀   {(m['하실말씀'] or '-')[:300]}",
+            "-" * 74,
+        ]
+    return "\n".join(줄) + "\n"
+
+
+@app.get("/setup-8f3a91c40b/알림", response_class=PlainTextResponse)
+def 알림설정(채널: str = Query(""), 주제: str = Query(""),
+           토큰: str = Query(""), 방: str = Query(""), 시험: str = Query("")):
+    """알림 통로를 여기서 켜고 끈다. 서버에 직접 들어가지 않아도 되게 만들었다."""
+    if 채널:
+        ads.설정_쓰기("알림채널", 채널)
+    if 주제:
+        ads.설정_쓰기("ntfy주제", 주제)
+    if 토큰:
+        ads.설정_쓰기("텔레그램토큰", 토큰)
+    if 방:
+        ads.설정_쓰기("텔레그램방", 방)
+
+    설정 = {
+        "채널": ads.설정_읽기("알림채널", "없음"),
+        "주제": ads.설정_읽기("ntfy주제", ""),
+        "토큰": ads.설정_읽기("텔레그램토큰", ""),
+        "방": ads.설정_읽기("텔레그램방", ""),
+    }
+    줄 = ["요양지도 알림 설정", "=" * 60,
+          f"채널      {설정['채널']}",
+          f"ntfy 주제  {설정['주제'] or '(비어 있음)'}",
+          f"텔레그램   {'설정됨' if 설정['토큰'] else '(비어 있음)'}",
+          f"마지막 알림 {ads.설정_읽기('마지막알림', '아직 없음')}",
+          "-" * 60]
+    if 시험 == "1":
+        보냄, 사유 = notify.알림(설정, "요양지도 · 알림 시험",
+                             "이 알림이 보이면 설정이 끝난 것입니다.",
+                             f"{DOMAIN}/setup-8f3a91c40b/문의")
+        줄.append(f"시험 발송: {'성공' if 보냄 else '실패'} — {사유}")
+    else:
+        줄.append("시험 발송하려면 이 주소 뒤에 ?시험=1 을 붙이세요.")
+    return "\n".join(줄) + "\n"
 
 
 @app.get("/setup-8f3a91c40b/광고", response_class=PlainTextResponse)

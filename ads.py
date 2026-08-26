@@ -179,3 +179,87 @@ def 재고() -> dict:
         "정가합계": sum(r["월단가"] for r in 현황),
         "미판매액": sum(r["월단가"] for r in 빈자리),
     }
+
+
+# ── 광고 문의 ─────────────────────────────────────────────────────────
+# 메일 주소를 공개 페이지에 적으면 스팸 수집 로봇이 먼저 긁어간다.
+# 진짜 문의가 스팸에 묻히면 우리는 그 문의를 영영 못 본다.
+# 그래서 주소를 감추고 양식으로 받는다.
+
+def 문의_준비():
+    with _con() as con:
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS 문의(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                받은때 TEXT,
+                업체명 TEXT, 자리키 TEXT, 전화 TEXT, 이메일 TEXT,
+                한줄 TEXT, 하실말씀 TEXT,
+                상태 TEXT DEFAULT '안읽음',
+                처리메모 TEXT
+            )""")
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS 설정(
+                키 TEXT PRIMARY KEY, 값 TEXT
+            )""")
+
+
+def 설정_읽기(키: str, 기본: str = "") -> str:
+    try:
+        with _con() as con:
+            r = con.execute("SELECT 값 FROM 설정 WHERE 키=?", (키,)).fetchone()
+            return r["값"] if r else 기본
+    except Exception:
+        return 기본
+
+
+def 설정_쓰기(키: str, 값: str) -> None:
+    with _con() as con:
+        con.execute("""INSERT INTO 설정(키,값) VALUES(?,?)
+                       ON CONFLICT(키) DO UPDATE SET 값=excluded.값""", (키, 값))
+
+
+def 최근_문의_수(분: int = 60) -> int:
+    """같은 시간 안에 몇 건이나 들어왔는지. 자동 스팸을 막는 데 쓴다."""
+    기준 = (datetime.now(KST) - timedelta(minutes=분)).strftime("%Y-%m-%d %H:%M")
+    try:
+        with _con() as con:
+            r = con.execute("SELECT COUNT(*) c FROM 문의 WHERE 받은때 >= ?", (기준,)).fetchone()
+            return r["c"]
+    except Exception:
+        return 0
+
+
+def 문의_저장(업체명: str, 자리키: str, 전화: str, 이메일: str,
+             한줄: str, 하실말씀: str) -> int:
+    지금 = datetime.now(KST).strftime("%Y-%m-%d %H:%M")
+    with _con() as con:
+        cur = con.execute("""
+            INSERT INTO 문의(받은때, 업체명, 자리키, 전화, 이메일, 한줄, 하실말씀)
+            VALUES(?,?,?,?,?,?,?)""",
+            (지금, 업체명[:80], 자리키[:60], 전화[:30], 이메일[:120],
+             한줄[:200], 하실말씀[:2000]))
+        return cur.lastrowid
+
+
+def 문의_목록(개수: int = 50) -> list[dict]:
+    try:
+        with _con() as con:
+            return [dict(r) for r in con.execute(
+                "SELECT * FROM 문의 ORDER BY id DESC LIMIT ?", (개수,))]
+    except Exception:
+        return []
+
+
+def 문의_안읽음() -> int:
+    try:
+        with _con() as con:
+            return con.execute(
+                "SELECT COUNT(*) c FROM 문의 WHERE 상태='안읽음'").fetchone()["c"]
+    except Exception:
+        return 0
+
+
+def 문의_읽음처리() -> int:
+    with _con() as con:
+        cur = con.execute("UPDATE 문의 SET 상태='읽음' WHERE 상태='안읽음'")
+        return cur.rowcount

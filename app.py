@@ -738,16 +738,19 @@ async def 광고문의_접수(request: Request):
 
 
 @app.get("/setup-8f3a91c40b/문의", response_class=PlainTextResponse)
-def 문의현황(읽음: str = Query("")):
+def 문의현황(읽음: str = Query(""), 지움: int = Query(0)):
     if 읽음 == "처리":
         n = ads.문의_읽음처리()
         return f"{n}건을 읽음으로 바꿨습니다.\n"
+    if 지움:
+        n = ads.문의_지움(지움)
+        return f"{지움}번 문의를 {'지웠습니다' if n else '찾지 못했습니다'}.\n"
     목록 = ads.문의_목록()
     줄 = [f"요양지도 광고 문의  ({datetime.now().strftime('%Y-%m-%d %H:%M')})",
           "=" * 74,
           f"전체 {len(목록)}건 · 안읽음 {ads.문의_안읽음()}건",
           f"마지막 알림: {ads.설정_읽기('마지막알림', '아직 없음')}",
-          "전부 읽음으로 바꾸려면 이 주소 뒤에 ?읽음=처리 를 붙이세요.",
+          "전부 읽음으로 바꾸려면 ?읽음=처리 · 한 건 지우려면 ?지움=번호",
           "-" * 74]
     if not 목록:
         줄.append("아직 들어온 문의가 없습니다.")
@@ -764,6 +767,37 @@ def 문의현황(읽음: str = Query("")):
     return "\n".join(줄) + "\n"
 
 
+@app.get("/setup-8f3a91c40b/게재", response_class=PlainTextResponse)
+def 게재관리(자리: str = Query(""), 업체명: str = Query(""), 한줄: str = Query(""),
+           전화: str = Query(""), 링크: str = Query(""), 개월: int = Query(12),
+           내림: int = Query(0)):
+    """업체가 승낙하면 여기서 배너를 건다. 서버에 직접 들어가지 않아도 되게 만들었다."""
+    if 내림:
+        n = ads.게재_내리기(내림)
+        return f"{내림}번 게재를 {'내렸습니다' if n else '찾지 못했습니다'}.\n"
+    if 자리 and 업체명:
+        된다, 말 = ads.게재_걸기(자리, 업체명, 한줄, 전화, 링크, 개월)
+        return ("성공: " if 된다 else "실패: ") + 말 + "\n"
+
+    줄 = ["요양지도 배너 게재 관리", "=" * 74,
+          "거는 법 — 이 주소 뒤에 붙이세요:",
+          "  ?자리=<자리키>&업체명=<이름>&한줄=<소개>&전화=<번호>&링크=<주소>&개월=12",
+          "  (링크와 전화는 없어도 됩니다. 개월을 안 적으면 12개월입니다.)",
+          "내리는 법 — ?내림=<게재번호>",
+          "-" * 74, "[비어 있는 자리]"]
+    for x in ads.전체현황():
+        if not x["업체"]:
+            줄.append(f"  {x['키']:<26} {x['대상']}  (월 {x['월단가']:,}원)")
+    줄 += ["-" * 74, "[지금 걸려 있는 광고]"]
+    걸린것 = [x for x in ads.전체현황() if x["업체"]]
+    if not 걸린것:
+        줄.append("  아직 없습니다.")
+    for x in 걸린것:
+        줄.append(f"  {x['키']:<26} {x['업체']}  "
+                  f"노출 {x['성과']['노출']} · 클릭 {x['성과']['클릭']}")
+    return "\n".join(줄) + "\n"
+
+
 @app.get("/setup-8f3a91c40b/알림", response_class=PlainTextResponse)
 def 알림설정(채널: str = Query(""), 주제: str = Query(""),
            토큰: str = Query(""), 방: str = Query(""), 시험: str = Query("")):
@@ -771,7 +805,7 @@ def 알림설정(채널: str = Query(""), 주제: str = Query(""),
     if 채널:
         ads.설정_쓰기("알림채널", 채널)
     if 주제:
-        ads.설정_쓰기("ntfy주제", 주제)
+        ads.설정_쓰기("ntfy주제", "" if 주제 == "지움" else 주제)
     if 토큰:
         ads.설정_쓰기("텔레그램토큰", 토큰)
     if 방:

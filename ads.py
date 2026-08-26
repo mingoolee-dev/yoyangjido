@@ -263,3 +263,33 @@ def 문의_읽음처리() -> int:
     with _con() as con:
         cur = con.execute("UPDATE 문의 SET 상태='읽음' WHERE 상태='안읽음'")
         return cur.rowcount
+
+
+def 문의_지움(번호: int) -> int:
+    with _con() as con:
+        return con.execute("DELETE FROM 문의 WHERE id=?", (번호,)).rowcount
+
+
+def 게재_걸기(자리키: str, 업체명: str, 한줄: str = "", 전화: str = "",
+            링크: str = "", 개월: int = 12) -> tuple[bool, str]:
+    """자리에 광고를 건다. 한 자리에 한 업체만 건다."""
+    if 자리키 not in 자리표:
+        return False, f"그런 자리가 없습니다: {자리키}"
+    if 자리(자리키):
+        return False, "이미 그 자리에 걸린 광고가 있습니다. 먼저 내리세요."
+    오늘 = datetime.now(KST)
+    끝 = (오늘 + timedelta(days=30 * max(1, 개월))).strftime("%Y-%m-%d")
+    with _con() as con:
+        cur = con.execute("""
+            INSERT INTO 게재(자리키, 업체명, 한줄, 전화, 링크,
+                            시작일, 종료일, 월단가, 상태)
+            VALUES(?,?,?,?,?,?,?,?, '게재중')""",
+            (자리키, 업체명[:80], 한줄[:200], 전화[:30], 링크[:300],
+             오늘.strftime("%Y-%m-%d"), 끝, 자리표[자리키]["월단가"]))
+        return True, f"{cur.lastrowid}번으로 걸었습니다. 종료일 {끝}"
+
+
+def 게재_내리기(번호: int) -> int:
+    with _con() as con:
+        return con.execute(
+            "UPDATE 게재 SET 상태='내림' WHERE id=? AND 상태='게재중'", (번호,)).rowcount

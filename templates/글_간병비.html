@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% set 현재단계 = "모시는 중" %}
+{% block title %}{{ 제목 }} — 요양지도{% endblock %}
+{% block desc %}{{ 요약 }}{% endblock %}
+
+{% block stamp %}
+<div class="wrap">
+  <p class="stamp">
+    출처 {{ c.출처.공단웹진.이름 }} ·
+    <a href="{{ c.출처.공단웹진.URL }}" rel="nofollow noopener" target="_blank">원문 보기</a> ·
+    이 페이지 최종 확인 {{ 갱신일 }}
+  </p>
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>간병비, 실제로<br>얼마나 드나요</h1>
+
+<div class="answer">
+  <p><strong>간병비에는 정해진 값이 없습니다.</strong>
+  건강보험 급여 항목이 아니라서 <strong>수가 자체가 존재하지 않습니다.</strong>
+  병원이나 간병인이 부르는 값이 곧 가격입니다.</p>
+  <p>
+    공단이 직접 비교한 자료가 하나 있습니다({{ c.비교.기준 }}).
+    개인 간병인을 쓰면 하루 <strong>{{ c.비교.일반병동.간병비|won }}원</strong>,
+    한 달이면 <strong>{{ 월간병비|won }}원</strong>입니다.
+  </p>
+  <p>
+    <strong>간호간병통합병동</strong>을 쓰면 간병인이 따로 필요 없어
+    하루 {{ c.비교.통합병동.합계|won }}원, 한 달 {{ 월통합|won }}원으로 끝납니다.
+    <strong>한 달에 {{ 월절감|won }}원 차이</strong>입니다.
+  </p>
+  <p>
+    다만 <strong>요양원에는 간병비가 아예 없고</strong>,
+    <strong>요양병원에는 통합병동이 거의 없습니다.</strong> 아래에서 나눠 설명합니다.
+  </p>
+  <p class="answer-src">
+    {{ c.출처.공단웹진.이름 }} · 이 페이지 최종 확인 {{ 갱신일 }}
+  </p>
+</div>
+
+<div class="note warn">
+  <b>먼저 밝힙니다 — 위 금액은 2023년 9월 기준입니다.</b><br>
+  간병비는 급여가 아니라 정해진 수가가 없고 해마다 오릅니다.
+  <strong>저희는 2026년 현재의 값을 1차 출처로 확인하지 못했습니다.</strong>
+  그래서 옛 숫자임을 밝히고 그대로 씁니다. 오늘 값처럼 적지 않겠습니다.
+</div>
+
+<h2>왜 정해진 값이 없나요</h2>
+<p>
+  병원비는 건강보험이 “이 치료는 얼마”라고 정해 놓습니다. 그래서 어느 병원을 가도 큰 틀은 같습니다.
+  <strong>그런데 간병은 그 목록에 없습니다.</strong>
+</p>
+<p>
+  급여가 아니니 수가가 없고, 수가가 없으니 <strong>비교할 기준도 없습니다.</strong>
+  “간병비 평균”이라고 적힌 글들이 인터넷에 많은데, 그 숫자의 출처를 따라가 보면 대개 나오지 않습니다.
+  <strong>존재하지 않는 평균이기 때문입니다.</strong>
+</p>
+
+<h2>요양원이냐 요양병원이냐로 갈립니다</h2>
+<p>이걸 모르고 상담하러 가면 이야기가 어긋납니다.</p>
+{% for r in c.어디에_붙나 %}
+<div class="cmp">
+  <h3>{{ r.곳 }}</h3>
+  <dl>
+    <dt>간병비</dt><dd><strong>{{ r.간병비 }}</strong></dd>
+    <dt>왜</dt><dd>{{ r.왜 }}</dd>
+    <dt>대신</dt><dd>{{ r.대신 }}</dd>
+  </dl>
+</div>
+{% endfor %}
+<div class="note">
+  <b>요양원에 “간병비가 얼마냐”고 물으면 대화가 헛돕니다.</b><br>
+  요양원에서 물으실 것은 <strong>비급여</strong>입니다 — 식재료비·기저귀·이미용비.
+  간병비는 요양병원에서 물으실 말입니다.
+</div>
+
+<h2>간병비를 줄이는 제도는 하나뿐입니다</h2>
+<p>
+  <strong>간호간병통합서비스</strong>입니다. 보호자나 간병인 대신
+  간호 인력이 24시간 돌보는 병동이고, <strong>건강보험이 적용됩니다.</strong>
+  그래서 간병인을 따로 쓰지 않아도 됩니다.
+</p>
+<div class="tw">
+<table>
+  <caption>{{ c.비교.기준 }}</caption>
+  <thead><tr><th>구분</th><th class="n">입원료(하루)</th><th class="n">간병비(하루)</th><th class="n">하루 합계</th><th class="n">한 달</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="nw">일반병동 + 개인 간병인</td>
+      <td class="n">{{ c.비교.일반병동.입원료|won }}원</td>
+      <td class="n">{{ c.비교.일반병동.간병비|won }}원</td>
+      <td class="n">{{ c.비교.일반병동.합계|won }}원</td>
+      <td class="n"><strong>{{ 월일반|won }}원</strong></td>
+    </tr>
+    <tr>
+      <td class="nw">간호간병통합병동</td>
+      <td class="n">{{ c.비교.통합병동.입원료|won }}원</td>
+      <td class="n">없음</td>
+      <td class="n">{{ c.비교.통합병동.합계|won }}원</td>
+      <td class="n"><strong>{{ 월통합|won }}원</strong></td>
+    </tr>
+    <tr>
+      <td class="nw">차이</td>
+      <td class="n">—</td><td class="n">—</td>
+      <td class="n">{{ c.비교.절감_하루|won }}원</td>
+      <td class="n"><strong>{{ 월절감|won }}원</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p class="fee-note">
+  공단은 이를 “{{ c.비교.감소율_문구 }}”라고 표현했습니다.
+  입원료 자체는 통합병동이 두 배 정도 비싸지만, <strong>간병비가 사라지는 폭이 훨씬 큽니다.</strong>
+</p>
+
+<h2>그런데 요양병원에는 거의 없습니다</h2>
+<p>
+  여기가 중요합니다. 공단 「간호·간병 통합서비스 병원 찾기」에서
+  <strong>서울 지역을 조회해 봤습니다({{ c.출처.병원찾기.확인일 }}).</strong>
+</p>
+<p>
+  나온 곳은 서울대학교병원, 강북삼성병원, 경희대학교병원, 고려대학교 안암병원,
+  가톨릭대학교 성모병원 계열, 서울적십자병원 같은
+  <strong>대학병원과 종합병원이었고, 요양병원은 나오지 않았습니다.</strong>
+</p>
+<div class="note warn">
+  <b>이건 저희가 화면에서 본 것이지 규정을 확인한 것이 아닙니다.</b>
+  요양병원에 통합병동이 있는지 없는지는 <strong>국민건강보험공단 1577-1000</strong>에 확인하시는 것이 정확합니다.
+  다만 <strong>부모님을 요양병원에 모실 계획이라면, 통합병동은 기대하지 않으시는 편이 안전합니다.</strong>
+</div>
+
+<h2>“나라에서 간병비를 준다던데요”</h2>
+<p>조문은 있습니다.</p>
+<div class="answer" style="border-left-color:var(--sand)">
+  <p><strong>{{ c.조문.조 }}</strong></p>
+  <p>“{{ c.조문.본문 }}”</p>
+  <p class="answer-src">{{ c.출처.장기요양법.이름 }}</p>
+</div>
+<p>{{ c.조문.해설 }}</p>
+
+<h2>상담 때 이대로 물어보세요</h2>
+<p>요양병원에 전화하시거나 찾아가실 때 그대로 읽으시면 됩니다.</p>
+{% for 질문, 이유 in c.물어볼것 %}
+<div class="cmp">
+  <h3>{{ 질문 }}</h3>
+  <p class="cmp-src">{{ 이유 }}</p>
+</div>
+{% endfor %}
+
+<h2>이건 전화로 확인하셔야 합니다</h2>
+<p>
+  전국 공통 답이 없거나, 저희가 1차 출처로 확인하지 못해 숫자를 적지 않은 것들입니다.
+  <strong>어디에 물어보면 되는지</strong>를 같이 적었습니다.
+</p>
+{% for x in c.확인못한것 %}
+<div class="unknown">
+  <h3>{{ x.무엇 }}</h3>
+  <p>{{ x.왜 }}</p>
+  <p><b>→ {{ x.어떻게 }}</b></p>
+</div>
+{% endfor %}
+
+<h2>이어서 보실 것</h2>
+<p>
+  간병비는 요양병원 비용의 한 조각입니다. 진료비와 식대가 어떻게 계산되는지는 따로 정리해 두었습니다.
+</p>
+<p><a class="cta" href="/글/요양병원-한달-비용">요양병원 한 달 비용 보기</a></p>
+
+<h2>자주 묻는 것</h2>
+<div class="qa">
+  {% for q, a in qa %}
+  <h3>{{ q }}</h3>
+  <p>{{ a }}</p>
+  {% endfor %}
+</div>
+
+<p class="fee-note">
+  이 글은 {{ 발행일 }}에 쓰고 {{ 갱신일 }}에 확인했습니다. 금액은 바뀝니다.
+  의료 판단은 하지 않습니다. 건강 문제는 진료하신 의사와 상의하세요.
+</p>
+{% endblock %}

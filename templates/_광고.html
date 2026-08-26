@@ -1,4 +1,7 @@
 {# 제휴 배너 자리.
+   빈 자리 권유는 페이지당 한 번(':1' 자리)만 띄운다.
+   같은 권유가 한 글에 세 번 뜨면 보호자 눈에는 광고 잡동사니로 보인다.
+   우리 자산은 신뢰지 자리 수가 아니다. 팔린 자리는 전부 그대로 나온다.
    빈 자리를 비워두지 않는다. 빈 자리가 24시간 대신 영업한다.
    유료 링크에는 반드시 rel="nofollow sponsored"를 단다(구글 정책).
    배너에는 반드시 '광고'라고 적는다. 정보인 척하지 않는다. #}
@@ -17,11 +20,11 @@
     {% if 광고.링크 %}<a class="adx-go" href="/광고/{{ 광고.id }}" rel="nofollow sponsored noopener" target="_blank">홈페이지</a>{% endif %}
   </div>
 </div>
-{% elif 정의 %}
+{% elif 정의 and 키.endswith(':1') %}
 <a class="adx adx-empty" href="/광고안내">
   <span class="adx-tag">광고 자리</span>
   <div class="adx-body">
-    <b>{{ 정의.대상 }}을 찾습니다</b>
+    <b>{{ 정의.대상 }}{{ 정의.대상|조사('을/를') }} 찾습니다</b>
     <span class="adx-line">이 자리에 업체 정보를 걸 수 있습니다. 조회 수를 공개하고, 순위는 팔지 않습니다.</span>
   </div>
   <div class="adx-act"><span class="adx-go">광고 안내 보기</span></div>

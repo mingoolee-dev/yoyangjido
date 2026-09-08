@@ -142,7 +142,7 @@ def home(request: Request):
     con.close()
     순 = [(t, 유형별[t]) for t in 유형순서 if t in 유형별]
     return tpl.TemplateResponse(request, "index.html", ctx(
-        총계=총계, 유형별=순, 색인=True, canonical="/",
+        총계=총계, 유형별=순, 유형설명=유형설명, 색인=True, canonical="/",
         스키마=[seo.조직_스키마(), seo.웹사이트_스키마()]))
 
 

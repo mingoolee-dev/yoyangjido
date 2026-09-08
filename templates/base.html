@@ -44,17 +44,16 @@
   </div>
 </header>
 
-<div class="journey">
+{# 「걱정 시작 - 등급 신청 - 시설 선택」 띠를 없앴다.
+   눌러지지도 않는데 무슨 뜻인지 알 수 없다는 말을 실제 이용자에게 들었다(2026-09-08).
+   대신 한국 사이트에서 익숙한 「현재 위치」 표시를 둔다. 누르면 위로 올라간다. #}
+{% if self.위치() | trim %}
+<nav class="where" aria-label="현재 위치">
   <div class="wrap">
-    <ol>
-      {% for s in 여정단계 %}
-      <li{% if s == 현재단계 %} class="on"{% endif %}>
-        {% if s == 현재단계 %}<b>{{ s }}</b>{% else %}{{ s }}{% endif %}
-      </li>
-      {% endfor %}
-    </ol>
+    <a href="/">홈</a>{% block 위치 %}{% endblock %}
   </div>
-</div>
+</nav>
+{% endif %}
 
 {% block stamp %}{% endblock %}
 

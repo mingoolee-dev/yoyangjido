@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% set 현재단계 = "모시는 중" %}
 {% block title %}{{ 제목 }}, 요양지도{% endblock %}
 {% block desc %}{{ 요약 }}{% endblock %}
 
@@ -14,6 +13,8 @@
 {% endblock %}
 
 {% import "_광고.html" as 광고 with context %}
+{% block 위치 %}<b>간병비</b>{% endblock %}
+
 {% block content %}
 <h1>간병비, 실제로<br>얼마나 드나요</h1>
 

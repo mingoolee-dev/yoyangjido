@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% set 현재단계 = "시설 선택" %}
 {% block title %}{{ 권역 }} 요양시설 {{ '{:,}'.format(총계) }}곳 | 요양지도{% endblock %}
 {% block desc %}{{ 권역 }} 지역 장기요양기관 {{ '{:,}'.format(총계) }}곳. 시, 군, 구를 고르시면 요양원과 주야간보호, 방문요양을 한눈에 보실 수 있습니다.{% endblock %}
 
+{% block 위치 %}<a href="/시설/">시설 찾기</a><b>{{ 권역 }}</b>{% endblock %}
+
 {% block content %}
-<p class="crumb"><a href="/">요양지도</a> &gt; <a href="/시설/">시설 찾기</a> &gt; {{ 권역 }}</p>
 
 <h1>{{ 권역 }} 요양시설</h1>
 <p class="lede">

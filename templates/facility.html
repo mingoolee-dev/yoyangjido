@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% set 현재단계 = "시설 선택" %}
 {% block title %}{{ f.name }} | {{ 시군구 }} {{ f.대표유형 }} | 요양지도{% endblock %}
 {% block desc %}{{ f.name }}({{ f.sigungu }} {{ f.dong.split(' ')[-1] if f.dong else '' }}) 기본 정보. 유형, 정원, 인력, 지정일자. 국민건강보험공단 공개 자료 기준 {{ DATA_기준일 }}.{% endblock %}
 
@@ -12,13 +11,9 @@
 </div>
 {% endblock %}
 
-{% block content %}
-<p class="crumb">
- <a href="/">요양지도</a> ›
- <a href="/시설/{{ 권역 }}/">{{ 권역 }}</a> &gt; <a href="{{ 목록주소 }}">{{ 시군구 }}</a> &gt;
- <a href="{{ 목록주소 }}?유형={{ f.대표유형 }}">{{ f.대표유형 }}</a>
-</p>
+{% block 위치 %}<a href="/시설/">시설 찾기</a><a href="/시설/{{ 권역 }}/">{{ 권역 }}</a><a href="{{ 목록주소 }}">{{ 시군구 }}</a><b>{{ f.name }}</b>{% endblock %}
 
+{% block content %}
 <h1>{{ f.name }}</h1>
 <p class="lede">{{ 유형설명.get(f.대표유형, "") }}</p>
 

@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% set 현재단계 = "시설 선택" %}
 {% block title %}요양원 한 달 본인부담금 계산 (2026년 기준), 요양지도{% endblock %}
 {% block desc %}장기요양등급만 고르면 2026년 수가 기준으로 요양원 한 달 본인부담금을 계산합니다. 보건복지부 고시 1차 출처.{% endblock %}
 
@@ -13,6 +12,8 @@
 {% endblock %}
 
 {% import "_광고.html" as 광고 with context %}
+{% block 위치 %}<b>비용 계산</b>{% endblock %}
+
 {% block content %}
 <h1>요양원, 한 달에 얼마 드나요</h1>
 

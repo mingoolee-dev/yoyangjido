@@ -1,7 +1,8 @@
 {% extends "base.html" %}
-{% set 현재단계 = "시설 선택" %}
 {% block title %}전국 요양시설 찾기 {{ '{:,}'.format(총계) }}곳 | 요양지도{% endblock %}
 {% block desc %}국민건강보험공단에 등록된 전국 장기요양기관 {{ '{:,}'.format(총계) }}곳. 사시는 지역을 고르시면 요양원, 주야간보호, 방문요양을 한눈에 보실 수 있습니다.{% endblock %}
+
+{% block 위치 %}<b>시설 찾기</b>{% endblock %}
 
 {% block content %}
 <h1>어느 지역에서<br>찾고 계십니까?</h1>

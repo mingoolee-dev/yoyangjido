@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% set 현재단계 = "시설 선택" %}
 {% block title %}{{ 제목 }}, 요양지도{% endblock %}
 {% block desc %}{{ 요약 }}{% endblock %}
 
@@ -13,6 +12,8 @@
 {% endblock %}
 
 {% import "_광고.html" as 광고 with context %}
+{% block 위치 %}<b>요양병원 비용</b>{% endblock %}
+
 {% block content %}
 <h1>요양병원, 한 달에<br>얼마나 드나요</h1>
 

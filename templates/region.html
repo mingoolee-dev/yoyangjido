@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% set 현재단계 = "시설 선택" %}
 {% block title %}{{ 시군구 }} 요양시설 {{ 총계 }}곳 전부{% if 유형 %}, {{ 유형 }}{% endif %} | 요양지도{% endblock %}
 {% block desc %}{{ 권역 }} {{ 시군구 }} 장기요양기관 전체 목록입니다. 요양원, 주야간보호, 방문요양, 복지용구까지 국민건강보험공단 공개 자료 그대로 옮겼습니다.{% endblock %}
 
@@ -13,8 +12,9 @@
 {% endblock %}
 
 {% import "_광고.html" as 광고 with context %}
+{% block 위치 %}<a href="/시설/">시설 찾기</a><a href="/시설/{{ 권역 }}/">{{ 권역 }}</a><b>{{ 시군구 }}</b>{% endblock %}
+
 {% block content %}
-<p class="crumb"><a href="/">요양지도</a> &gt; <a href="/시설/">시설 찾기</a> &gt; <a href="/시설/{{ 권역 }}/">{{ 권역 }}</a> &gt; {{ 시군구 }}</p>
 
 <h1>{{ 시군구 }} 요양시설{% if 유형 %}, {{ 유형 }}{% endif %}</h1>
 

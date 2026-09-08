@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% set 현재단계 = "시설 선택" %}
 {% block title %}{{ 제목 }} | 요양지도{% endblock %}
 {% block desc %}{{ 요약 }}{% endblock %}
 
@@ -13,11 +12,9 @@
 {% endblock %}
 
 {% import "_광고.html" as 광고 with context %}
+{% block 위치 %}<a href="/시설/">시설 찾기</a><a href="/시설/{{ 권역 }}/">{{ 권역 }}</a><a href="{{ 목록주소 }}">{{ 시군구 }}</a><b>{{ 유형 }}</b>{% endblock %}
+
 {% block content %}
-<p class="crumb">
- <a href="/">요양지도</a> ›
- <a href="/시설/">시설 찾기</a> &gt; <a href="/시설/{{ 권역 }}/">{{ 권역 }}</a> &gt; <a href="{{ 목록주소 }}">{{ 시군구 }}</a> &gt; {{ 유형 }}
-</p>
 
 <h1>{{ 시군구 }} {{ 유형 }}</h1>
 

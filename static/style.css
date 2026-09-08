@@ -320,3 +320,42 @@ td .sub-cell,.sub-cell{font-size:.82rem;color:var(--ink-3);line-height:1.6}
 .inq .hint{margin:8px 0 0;font-size:13px;color:var(--ink-3)}
 .inq button{margin-top:20px}
 .inq .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+
+/* ── 지역 찾기 (권역, 시군구 버튼) ─────────────────────────
+   어르신이 손가락으로 누르는 화면이다.
+   숫자는 이름 아래 줄로 내리고 크기를 낮춰서, 이름이 먼저 읽히게 한다. */
+.findbox{background:var(--surface);border:1px solid var(--rule);border-radius:6px;
+         padding:16px 17px;margin:18px 0 8px}
+.findbox label{display:block;font-size:16px;font-weight:700;color:var(--ink);margin-bottom:10px}
+.findrow{display:flex;gap:9px;flex-wrap:wrap}
+.findrow input{flex:1 1 11rem;min-width:0;font-family:var(--sans);font-size:17px;
+  color:var(--ink);background:var(--ground);border:1px solid var(--rule);
+  border-radius:5px;padding:13px 13px}
+.findrow input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.findrow .btn{width:auto;flex:none;padding:0 1.5rem;min-height:52px}
+
+.regions,.cities{display:grid;gap:10px;margin:14px 0 4px;
+                 grid-template-columns:repeat(auto-fill,minmax(10rem,1fr))}
+.region,.city{display:block;background:var(--surface);
+  border:1px solid var(--rule);border-left:6px solid var(--accent);
+  border-radius:5px;padding:13px 15px;text-decoration:none;color:inherit}
+.region:hover,.city:hover{background:var(--accent-soft);border-color:var(--accent)}
+.region b,.city b{display:block;font-size:19px;font-weight:700;letter-spacing:-.01em;
+                  line-height:1.35}
+.region .sub,.city .sub{display:block;margin-top:4px;font-size:13.5px;color:var(--ink-3);
+  line-height:1.5;font-variant-numeric:tabular-nums}
+.city{border-left-width:4px}
+.city b{font-size:17.5px}
+
+/* 게시판형 목록 (검색 결과) */
+.board{list-style:none;margin:12px 0 0;padding:0;background:var(--surface);
+       border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.board li+li{border-top:1px solid var(--rule-soft)}
+.board a{display:flex;gap:10px;align-items:center;padding:15px;
+         text-decoration:none;color:inherit}
+.board a:hover{background:var(--surface-2)}
+.board .tag{flex:none;font-size:13px;font-weight:700;color:var(--accent);
+            background:var(--accent-soft);border-radius:3px;padding:3px 9px}
+.board .t{flex:1;font-size:17px;font-weight:600}
+.board .v{flex:none;font-size:15px;color:var(--ink-3);
+          font-variant-numeric:tabular-nums;white-space:nowrap}

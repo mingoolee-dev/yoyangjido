@@ -60,8 +60,6 @@ DATA_URL = "https://www.data.go.kr/data/15124763/fileData.do"
 }
 
 
-여정단계 = ["걱정 시작", "등급 신청", "시설 선택", "모시는 중", "그 이후"]
-
 app = FastAPI(title=SITE, docs_url=None, redoc_url=None)
 # 후행 슬래시 자동 리디렉션을 끈다.
 #   /시설/전북/군산시/요양원/   유형 페이지
@@ -122,7 +120,7 @@ tpl.env.filters["조사"] = _조사
 
 def ctx(**kw):
     base = {
-        "SITE": SITE, "DOMAIN": DOMAIN, "여정단계": 여정단계,
+        "SITE": SITE, "DOMAIN": DOMAIN,
         "DATA_기준일": DATA_기준일, "DATA_출처": DATA_출처, "DATA_URL": DATA_URL,
         "갱신일": 갱신일, "네이버_소유확인": 네이버_소유확인, "절대주소": 절대주소,
         # 기본은 색인 금지. 켤 페이지에서만 명시적으로 뒤집는다.

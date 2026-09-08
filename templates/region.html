@@ -5,10 +5,10 @@
 
 {% block stamp %}
 <div class="wrap">
-  <p class="stamp">
-    기준일 {{ DATA_기준일 }} · 출처 {{ DATA_출처 }} ·
-    <a href="{{ DATA_URL }}" rel="nofollow">원문 보기</a>
-  </p>
+ <p class="stamp">
+ 기준일 {{ DATA_기준일 }} | 출처 {{ DATA_출처 }}
+ <a href="{{ DATA_URL }}" rel="nofollow">원문 보기</a>
+ </p>
 </div>
 {% endblock %}
 
@@ -22,57 +22,57 @@
 <p class="lede">{{ 유형설명[유형] }}</p>
 {% else %}
 <div class="answer">
-  <p><strong>{{ 권역 }} {{ 시군구 }}에 등록된 장기요양기관은 {{ 총계 }}곳입니다.</strong>
-  방문요양 110곳, 주야간보호 57곳, 방문목욕 51곳, 요양원 27곳, 복지용구 25곳 순으로 많습니다.
-  제휴한 곳만 추린 목록이 아니라 공단에 등록된 곳을 빠짐없이 옮긴 것입니다.</p>
-  <p class="answer-src">
-    출처 국민건강보험공단 장기요양기관 시설별 현황 · 기준일 {{ DATA_기준일 }} ·
-    이 페이지 최종 확인 {{ 갱신일 }}
-  </p>
+ <p><strong>{{ 권역 }} {{ 시군구 }}에 등록된 장기요양기관은 {{ 총계 }}곳입니다.</strong>
+ 방문요양 110곳, 주야간보호 57곳, 방문목욕 51곳, 요양원 27곳, 복지용구 25곳 순으로 많습니다.
+ 제휴한 곳만 추린 목록이 아니라 공단에 등록된 곳을 빠짐없이 옮긴 것입니다.</p>
+ <p class="answer-src">
+ 출처 국민건강보험공단 장기요양기관 시설별 현황 | 기준일 {{ DATA_기준일 }} |
+ 이 페이지 최종 확인 {{ 갱신일 }}
+ </p>
 </div>
 {% if 취재완료 %}<p>
-  군산은 바다와 들이 함께 있는 도시라 시설이 시내(나운동, 수송동, 조촌동)와
-  면 지역(서수면, 나포면, 임피면)에 나뉘어 있습니다.
-  <strong>모시고 다니실 거리를 먼저 생각하시는 편이 좋습니다.</strong>
-  주야간보호는 매일 오가야 하니 집에서 가까운 곳이, 요양원은 면회를 얼마나 자주 가실지가 기준이 됩니다.
+ 군산은 바다와 들이 함께 있는 도시라 시설이 시내(나운동, 수송동, 조촌동)와
+ 면 지역(서수면, 나포면, 임피면)에 나뉘어 있습니다.
+ <strong>모시고 다니실 거리를 먼저 생각하시는 편이 좋습니다.</strong>
+ 주야간보호는 매일 오가야 하니 집에서 가까운 곳이, 요양원은 면회를 얼마나 자주 가실지가 기준이 됩니다.
 </p>{% endif %}
 {% endif %}
 
 {% if 취재완료 %}{{ 광고.자리("군산:요양원:2") }}{% endif %}
 
 <div class="chips">
-  <a href="/시설/{{ 권역 }}/{{ 시군구 }}/" {% if not 유형 %}class="on"{% endif %}>전체<span class="n">{{ 총계 }}</span></a>
-  {% for t, n in 유형별 %}
-  <a href="{% if t in 경로유형 %}/시설/{{ 권역 }}/{{ 시군구 }}/{{ t }}/{% else %}/시설/{{ 권역 }}/{{ 시군구 }}/?유형={{ t }}{% endif %}" {% if 유형 == t %}class="on"{% endif %}>{{ t }}<span class="n">{{ n }}</span></a>
-  {% endfor %}
+ <a href="/시설/{{ 권역 }}/{{ 시군구 }}/" {% if not 유형 %}class="on"{% endif %}>전체<span class="n">{{ 총계 }}</span></a>
+ {% for t, n in 유형별 %}
+ <a href="{% if t in 경로유형 %}/시설/{{ 권역 }}/{{ 시군구 }}/{{ t }}/{% else %}/시설/{{ 권역 }}/{{ 시군구 }}/?유형={{ t }}{% endif %}" {% if 유형 == t %}class="on"{% endif %}>{{ t }}<span class="n">{{ n }}</span></a>
+ {% endfor %}
 </div>
 
 
 {% if rows %}
 <ul class="list">
-  {% for r in rows %}
-  <li>
-    <a href="/시설/{{ 권역 }}/{{ 시군구 }}/{{ r.slug }}">
-      <span class="nm">{{ r.name }}</span>
-      <span class="meta">
-        {% if not 유형 %}{{ r.대표유형 }}{% endif %}
-        {% if r.capacity %} · 정원 {{ r.capacity }}{% endif %}
-        {% if r.dong %} · {{ r.dong.split(' ')[-1] }}{% endif %}
-      </span>
-    </a>
-  </li>
-  {% endfor %}
+ {% for r in rows %}
+ <li>
+ <a href="/시설/{{ 권역 }}/{{ 시군구 }}/{{ r.slug }}">
+ <span class="nm">{{ r.name }}</span>
+ <span class="meta">
+ {% if not 유형 %}{{ r.대표유형 }}{% endif %}
+ {% if r.capacity %} | 정원 {{ r.capacity }}{% endif %}
+ {% if r.dong %} | {{ r.dong.split(' ')[-1] }}{% endif %}
+ </span>
+ </a>
+ </li>
+ {% endfor %}
 </ul>
 {% else %}
 <div class="empty-state">
-  <p>이 조건에 맞는 시설이 아직 없습니다. 위에서 다른 종류를 눌러보세요.</p>
+ <p>이 조건에 맞는 시설이 아직 없습니다. 위에서 다른 종류를 눌러보세요.</p>
 </div>
 {% endif %}
 
 <div class="note">
-  <b>정원은 최대 수용 인원입니다. 빈자리 수가 아닙니다.</b><br>
-  공단이 공개하는 자료에는 현재 몇 분이 계신지가 들어 있지 않습니다.
-  자리가 있는지는 시설에 전화로 물어보셔야 합니다.
+ <b>정원은 최대 수용 인원입니다. 빈자리 수가 아닙니다.</b><br>
+ 공단이 공개하는 자료에는 현재 몇 분이 계신지가 들어 있지 않습니다.
+ 자리가 있는지는 시설에 전화로 물어보셔야 합니다.
 </div>
 
 {% if 취재완료 %}{{ 광고.자리("군산:요양원:1") }}{% endif %}

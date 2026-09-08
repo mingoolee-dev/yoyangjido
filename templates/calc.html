@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% set 현재단계 = "시설 선택" %}
-{% block title %}요양원 한 달 본인부담금 계산 (2026년 기준) — 요양지도{% endblock %}
+{% block title %}요양원 한 달 본인부담금 계산 (2026년 기준), 요양지도{% endblock %}
 {% block desc %}장기요양등급만 고르면 2026년 수가 기준으로 요양원 한 달 본인부담금을 계산합니다. 보건복지부 고시 1차 출처.{% endblock %}
 
 {% block stamp %}
 <div class="wrap">
-  <p class="stamp">
-    기준일 {{ fees.기준일 }} · 출처 {{ fees.출처명 }} ({{ fees.고시일 }} 의결)
-    · <a href="{{ fees.출처URL }}" rel="nofollow">원문 보기</a>
-  </p>
+ <p class="stamp">
+ 기준일 {{ fees.기준일 }} | 출처 {{ fees.출처명 }} ({{ fees.고시일 }} 의결)
+ | <a href="{{ fees.출처URL }}" rel="nofollow">원문 보기</a>
+ </p>
 </div>
 {% endblock %}
 
@@ -17,89 +17,89 @@
 <h1>요양원, 한 달에 얼마 드나요</h1>
 
 <div class="answer">
-  <p><strong>2026년 기준 요양원 한 달 본인부담금은
-  1등급 {{ (표['1'].본인부담 * 30)|won }}원,
-  2등급 {{ (표['2'].본인부담 * 30)|won }}원,
-  3·4·5등급 {{ (표['3'].본인부담 * 30)|won }}원입니다</strong>(30일 기준).
-  급여비용의 20%가 본인부담이고 나머지 80%는 공단이 냅니다.
-  <strong>여기에 식재료비 등 비급여가 따로 붙습니다.</strong></p>
-  <p class="answer-src">
-    보건복지부 「2026년도 장기요양보험료율 0.9448%」 붙임2 · 2025년 제6차 장기요양위원회 의결(2025-11-04) ·
-    이 페이지 최종 확인 {{ 갱신일 }}
-  </p>
+ <p><strong>2026년 기준 요양원 한 달 본인부담금은
+ 1등급 {{ (표['1'].본인부담 * 30)|won }}원,
+ 2등급 {{ (표['2'].본인부담 * 30)|won }}원,
+ 3, 4, 5등급 {{ (표['3'].본인부담 * 30)|won }}원입니다</strong>(30일 기준).
+ 급여비용의 20%가 본인부담이고 나머지 80%는 공단이 냅니다.
+ <strong>여기에 식재료비 등 비급여가 따로 붙습니다.</strong></p>
+ <p class="answer-src">
+ 보건복지부 「2026년도 장기요양보험료율 0.9448%」 붙임2 | 2025년 제6차 장기요양위원회 의결(2025-11-04) |
+ 이 페이지 최종 확인 {{ 갱신일 }}
+ </p>
 </div>
 
 <p class="lede">
-  아래에서 부모님 등급을 고르시면 날짜와 비급여까지 넣어 계산해 드립니다.
+ 아래에서 부모님 등급을 고르시면 날짜와 비급여까지 넣어 계산해 드립니다.
 </p>
 
 <form class="calc" method="get" action="">
-  <div class="field">
-    <label for="등급">부모님 장기요양등급</label>
-    <p class="hint">아직 등급이 없으시면 먼저 공단에 신청하셔야 합니다. 등급이 없으면 요양원 급여를 받을 수 없습니다.</p>
-    <div class="radios">
-      {% for g in ["1","2","3","4","5"] %}
-      <label>
-        <input type="radio" name="등급" value="{{ g }}" {% if 등급 == g %}checked{% endif %}>
-        <span>{{ g }}등급</span>
-      </label>
-      {% endfor %}
-    </div>
-  </div>
+ <div class="field">
+ <label for="등급">부모님 장기요양등급</label>
+ <p class="hint">아직 등급이 없으시면 먼저 공단에 신청하셔야 합니다. 등급이 없으면 요양원 급여를 받을 수 없습니다.</p>
+ <div class="radios">
+ {% for g in ["1","2","3","4","5"] %}
+ <label>
+ <input type="radio" name="등급" value="{{ g }}" {% if 등급 == g %}checked{% endif %}>
+ <span>{{ g }}등급</span>
+ </label>
+ {% endfor %}
+ </div>
+ </div>
 
-  <div class="field">
-    <label for="일수">한 달 계실 날짜</label>
-    <p class="hint">요양원은 하루 단위로 계산합니다. 보통 30일로 봅니다.</p>
-    <input id="일수" type="number" name="일수" min="1" max="31" value="{{ 일수 }}">
-  </div>
+ <div class="field">
+ <label for="일수">한 달 계실 날짜</label>
+ <p class="hint">요양원은 하루 단위로 계산합니다. 보통 30일로 봅니다.</p>
+ <input id="일수" type="number" name="일수" min="1" max="31" value="{{ 일수 }}">
+ </div>
 
-  <div class="field">
-    <label for="비급여">식재료비 등 비급여 (아시면 입력)</label>
-    <p class="hint">
-      식재료비·상급침실료·이미용비는 <strong>시설마다 다르고 전액 본인 부담</strong>입니다.
-      상담 때 물어보시고 아시는 금액을 넣으세요. 모르시면 비워두셔도 됩니다.
-    </p>
-    <input id="비급여" type="number" name="비급여" min="0" step="10000" value="{{ 비급여 or '' }}" placeholder="예: 300000">
-  </div>
+ <div class="field">
+ <label for="비급여">식재료비 등 비급여 (아시면 입력)</label>
+ <p class="hint">
+ 식재료비, 상급침실료, 이미용비는 <strong>시설마다 다르고 전액 본인 부담</strong>입니다.
+ 상담 때 물어보시고 아시는 금액을 넣으세요. 모르시면 비워두셔도 됩니다.
+ </p>
+ <input id="비급여" type="number" name="비급여" min="0" step="10000" value="{{ 비급여 or '' }}" placeholder="예: 300000">
+ </div>
 
-  <button class="btn" type="submit">계산하기</button>
+ <button class="btn" type="submit">계산하기</button>
 </form>
 
 {% if 결과 %}
 <div class="result">
-  <div class="big">월 {{ 결과.합계_월|won }}원</div>
-  <div class="cap">
-    {{ 결과.등급 }}등급 · {{ 결과.일수 }}일 기준{% if 결과.비급여_월 %} · 비급여 포함{% endif %}
-  </div>
+ <div class="big">월 {{ 결과.합계_월|won }}원</div>
+ <div class="cap">
+ {{ 결과.등급 }}등급 | {{ 결과.일수 }}일 기준{% if 결과.비급여_월 %} | 비급여 포함{% endif %}
+ </div>
 
-  <ul class="breakdown">
-    <li><span>하루 요양원 비용 (전체)</span><span class="v">{{ 결과.수가_1일|won }}원</span></li>
-    <li><span>그중 공단이 냅니다 (80%)</span><span class="v">−{{ (결과.수가_1일 - 결과.본인부담_1일)|won }}원</span></li>
-    <li><span>하루 내실 돈 (20%)</span><span class="v">{{ 결과.본인부담_1일|won }}원</span></li>
-    <li><span>{{ 결과.일수 }}일치 급여 본인부담</span><span class="v">{{ 결과.급여_본인부담_월|won }}원</span></li>
-    {% if 결과.비급여_월 %}
-    <li><span>비급여 (직접 입력하신 금액)</span><span class="v">{{ 결과.비급여_월|won }}원</span></li>
-    {% endif %}
-    <li class="sum"><span>한 달 내실 돈</span><span class="v">{{ 결과.합계_월|won }}원</span></li>
-  </ul>
+ <ul class="breakdown">
+ <li><span>하루 요양원 비용 (전체)</span><span class="v">{{ 결과.수가_1일|won }}원</span></li>
+ <li><span>그중 공단이 냅니다 (80%)</span><span class="v">−{{ (결과.수가_1일 - 결과.본인부담_1일)|won }}원</span></li>
+ <li><span>하루 내실 돈 (20%)</span><span class="v">{{ 결과.본인부담_1일|won }}원</span></li>
+ <li><span>{{ 결과.일수 }}일치 급여 본인부담</span><span class="v">{{ 결과.급여_본인부담_월|won }}원</span></li>
+ {% if 결과.비급여_월 %}
+ <li><span>비급여 (직접 입력하신 금액)</span><span class="v">{{ 결과.비급여_월|won }}원</span></li>
+ {% endif %}
+ <li class="sum"><span>한 달 내실 돈</span><span class="v">{{ 결과.합계_월|won }}원</span></li>
+ </ul>
 </div>
 
 {% if not 결과.비급여_월 %}
 <div class="note warn">
-  <b>이 금액에 식비가 빠져 있습니다.</b><br>
-  식재료비는 급여가 아니라 전액 본인 부담이고 시설마다 다릅니다.
-  실제로는 여기에 <strong>월 25만~40만 원 정도가 더 붙는 경우가 많습니다.</strong>
-  정확한 금액은 시설에 직접 물어보셔야 합니다.
+ <b>이 금액에 식비가 빠져 있습니다.</b><br>
+ 식재료비는 급여가 아니라 전액 본인 부담이고 시설마다 다릅니다.
+ 실제로는 여기에 <strong>월 25만~40만 원 정도가 더 붙는 경우가 많습니다.</strong>
+ 정확한 금액은 시설에 직접 물어보셔야 합니다.
 </div>
 {% endif %}
 
 <div class="note">
-  <b>소득이 낮으시면 이 금액이 내려갑니다.</b><br>
-  의료급여 수급권자는 본인부담금의 <strong>60%</strong>를,
-  소득·재산이 기준 이하인 분은 <strong>40% 또는 60%</strong>를 깎아 줍니다.
-  1등급이라면 558,420원이 223,368원까지 내려갑니다.<br>
-  다만 <b>대상이 되는 소득 기준은 해마다 바뀌는 고시</b>라, 본인이 해당되는지는
-  공단에서 바로 확인해 주십니다 — <strong>1577-1000</strong>.
+ <b>소득이 낮으시면 이 금액이 내려갑니다.</b><br>
+ 의료급여 수급권자는 본인부담금의 <strong>60%</strong>를,
+ 소득, 재산이 기준 이하인 분은 <strong>40% 또는 60%</strong>를 깎아 줍니다.
+ 1등급이라면 558,420원이 223,368원까지 내려갑니다.<br>
+ 다만 <b>대상이 되는 소득 기준은 해마다 바뀌는 고시</b>라, 본인이 해당되는지는
+ 공단에서 바로 확인해 주십니다, <strong>1577-1000</strong>.
 </div>
 
 
@@ -107,8 +107,8 @@
 
 <h2>이제 어디로 모실지 보실 차례입니다</h2>
 <p>
-  계산하신 금액으로 갈 수 있는 군산시 요양시설을 정리해 두었습니다.
-  공단에 등록된 곳 전부이고, 정원과 인력까지 함께 볼 수 있습니다.
+ 계산하신 금액으로 갈 수 있는 군산시 요양시설을 정리해 두었습니다.
+ 공단에 등록된 곳 전부이고, 정원과 인력까지 함께 볼 수 있습니다.
 </p>
 <p><a class="btn ghost" href="/시설/전북/군산시/?유형=요양원">군산시 요양원 보기</a></p>
 {% endif %}
@@ -117,27 +117,27 @@
 
 <h2>등급별로 얼마인지 한 번에 보기</h2>
 <div class="tw">
-  <table>
-    <thead>
-      <tr>
-        <th>등급</th><th class="n">하루 전체 비용</th>
-        <th class="n">하루 내실 돈</th><th class="n">30일 기준</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for g in ["1","2","3","4","5"] %}
-      <tr>
-        <td>{{ g }}등급</td>
-        <td class="n">{{ 표[g].수가|won }}원</td>
-        <td class="n">{{ 표[g].본인부담|won }}원</td>
-        <td class="n">{{ (표[g].본인부담 * 30)|won }}원</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+ <table>
+ <thead>
+ <tr>
+ <th>등급</th><th class="n">하루 전체 비용</th>
+ <th class="n">하루 내실 돈</th><th class="n">30일 기준</th>
+ </tr>
+ </thead>
+ <tbody>
+ {% for g in ["1","2","3","4","5"] %}
+ <tr>
+ <td>{{ g }}등급</td>
+ <td class="n">{{ 표[g].수가|won }}원</td>
+ <td class="n">{{ 표[g].본인부담|won }}원</td>
+ <td class="n">{{ (표[g].본인부담 * 30)|won }}원</td>
+ </tr>
+ {% endfor %}
+ </tbody>
+ </table>
 </div>
 <p class="stamp" style="border:0">
-  3·4·5등급은 수가가 같습니다. 식재료비 등 비급여는 포함되지 않은 금액입니다.
+ 3, 4, 5등급은 수가가 같습니다. 식재료비 등 비급여는 포함되지 않은 금액입니다.
 </p>
 
 {{ 광고.자리("계산기:요양원:2") }}
@@ -145,8 +145,8 @@
 <h2>자주 묻는 것</h2>
 {% for q, a in qa %}
 <div class="qa">
-  <h3>{{ q }}</h3>
-  <p>{{ a }}</p>
+ <h3>{{ q }}</h3>
+ <p>{{ a }}</p>
 </div>
 {% endfor %}
 {% endblock %}

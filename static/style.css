@@ -1,34 +1,41 @@
-/* 요양지도 — 12장 디자인 브리프
-   "새벽 두 시, 병원 대기실 의자에서, 지친 50대가 한 손으로 보는 화면"
-   본문 17px 이상 / 줄간격 1.7 이상 / 대비비 4.5:1 이상 / 터치영역 44px 이상
-   팝업·자동재생·가로스크롤 없음 */
+/* 요양지도 디자인 규칙
+   보는 사람: 부모님 요양을 처음 알아보는 40~60대. 대부분 휴대폰.
+   지키는 것: 본문 17px 이상 / 줄간격 1.75 이상 / 터치영역 44px 이상
+   하지 않는 것: 팝업, 자동재생, 가로스크롤
+
+   2026-09-08 개편 — 실제 이용자 두 분에게 "한국 사이트 같지 않고
+   기계가 쓴 티가 난다"는 말을 들었다. 원인 중 하나가 명조체 제목이었다.
+   한국의 정보·기관 사이트는 고딕을 쓴다. 그래서 본고딕 하나로 통일하고,
+   색도 관공서·의료 사이트에서 익숙한 남색 계열로 바꿨다. */
 
 :root{
-  --ground:#F4F2EE;      /* 순백이 아닌, 아주 옅은 따뜻한 회색 */
-  --surface:#FBFAF8;
-  --surface-2:#EDEAE4;
-  --ink:#23211E;         /* 짙은 먹색 */
-  --ink-2:#55514A;
-  --ink-3:#837E75;
-  --rule:#D9D4CB;
-  --rule-soft:#E6E2DA;
-  --accent:#2E5A56;      /* 낮은 채도의 짙은 청록 */
-  --accent-soft:#DCE7E5;
-  --sand:#A8935F;
-  --ad:#8A6420;          /* 광고 표시 전용색 — 다른 곳에 쓰지 않는다 */
-  --ad-soft:#F3ECDD;
+  --ground:#F2F4F7;      /* 옅은 청회색. 한국 정보 사이트의 흔한 바탕 */
+  --surface:#FFFFFF;     /* 카드는 흰색. 경계가 분명해야 어르신이 덜 헷갈린다 */
+  --surface-2:#E8ECF1;
+  --ink:#15181C;
+  --ink-2:#454C55;
+  --ink-3:#6B747E;
+  --rule:#D5DBE3;
+  --rule-soft:#E6EAF0;
+  --accent:#123E6B;      /* 짙은 남색. 공공기관·의료 사이트의 신뢰색 */
+  --accent-soft:#E4EDF6;
+  --sand:#B03A10;        /* 주의를 뜻하는 붉은 주황 */
+  --ad:#B03A10;          /* 광고 표시 전용색. 다른 곳에 쓰지 않는다 */
+  --ad-soft:#FBEAE2;
 
-  --serif:"Gowun Batang","Apple SD Gothic Neo","Nanum Myeongjo",serif;
-  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  /* 글꼴은 본고딕 하나로 통일하고 굵기로 위계를 만든다.
+     제목용 변수 이름(--serif)은 템플릿 호환을 위해 남겨두되 값은 같다. */
+  --serif:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --sans:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --mono:"Noto Sans KR","Apple SD Gothic Neo",system-ui,sans-serif;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --ground:#191817; --surface:#211F1D; --surface-2:#2B2926;
-    --ink:#EAE6DF; --ink-2:#B5AFA5; --ink-3:#878177;
-    --rule:#3A3733; --rule-soft:#2F2C29;
-    --accent:#7FB3AB; --accent-soft:#22332F;
-    --sand:#BFA872; --ad:#C79A47; --ad-soft:#332A1A;
+    --ground:#14171B; --surface:#1D2126; --surface-2:#252A30;
+    --ink:#E9ECEF; --ink-2:#B2BAC3; --ink-3:#828B95;
+    --rule:#333A42; --rule-soft:#282E35;
+    --accent:#7FB2E0; --accent-soft:#1B2A38;
+    --sand:#E8946C; --ad:#E8946C; --ad-soft:#33211A;
   }
 }
 
@@ -46,16 +53,30 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{
   outline:3px solid var(--accent);outline-offset:2px}
 
 /* ── 상단 ───────────────────────────────── */
-header.site{border-bottom:1px solid var(--rule);background:var(--surface)}
-.bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;
-     min-height:56px;padding:.5rem 0}
-.logo{font-family:var(--serif);font-size:1.35rem;font-weight:700;
-      color:var(--ink);text-decoration:none;letter-spacing:-.01em}
-.logo span{color:var(--accent)}
-.bar nav{display:flex;gap:.2rem}
-.bar nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 .7rem;
-           font-size:.95rem;text-decoration:none;color:var(--ink-2);border-radius:2px}
-.bar nav a:hover{background:var(--surface-2);color:var(--ink)}
+/* 상단은 두 줄로 나눈다.
+   한 줄에 로고와 메뉴를 다 넣으니 휴대폰에서 로고가 잘려 나갔다
+   (2026-09-08 실제로 겪음). 메뉴는 아래 줄에서 옆으로 넘긴다. */
+header.site{border-bottom:2px solid var(--accent);background:var(--surface)}
+/* .bar 는 .wrap 과 같은 요소에 붙는다(class="wrap bar").
+   그래서 padding 을 통째로 쓰면 .wrap 의 좌우 여백이 지워진다.
+   휴대폰에서 로고가 화면 끝에 붙어 잘려 보이던 원인이었다(2026-09-08).
+   위아래만 지정해서 좌우는 .wrap 것을 그대로 둔다. */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:.75rem;
+     flex-wrap:wrap;padding-top:.55rem;padding-bottom:.55rem}
+.logo{flex:none;font-family:var(--serif);font-size:1.5rem;font-weight:900;
+      color:var(--accent);text-decoration:none;letter-spacing:-.02em}
+.logo span{color:var(--ink)}
+.bar nav{order:3;width:100%;display:flex;gap:0;
+         overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+         border-top:1px solid var(--rule-soft);margin-top:.35rem}
+.bar nav::-webkit-scrollbar{display:none}
+.bar nav a{flex:none;display:inline-flex;align-items:center;min-height:46px;
+           padding:0 .85rem;font-size:1rem;font-weight:500;text-decoration:none;
+           color:var(--ink-2);white-space:nowrap}
+.bar nav a:hover{background:var(--accent-soft);color:var(--accent)}
+@media (min-width:720px){
+  .bar nav{order:0;width:auto;border-top:0;margin-top:0}
+}
 
 /* ── 여정 지도 (12-4 시그니처) ───────────── */
 .journey{background:var(--surface-2);border-bottom:1px solid var(--rule)}
@@ -74,10 +95,10 @@ header.site{border-bottom:1px solid var(--rule);background:var(--surface)}
 .stamp a{color:var(--ink-3)}
 
 main{padding:1.6rem 0 4rem}
-h1{font-family:var(--serif);font-weight:700;font-size:clamp(1.65rem,5.5vw,2.3rem);
+h1{font-family:var(--serif);font-weight:900;font-size:clamp(1.65rem,5.5vw,2.3rem);
    line-height:1.3;margin:0 0 .6rem;text-wrap:balance;letter-spacing:-.01em}
-h2{font-family:var(--serif);font-weight:700;font-size:1.35rem;line-height:1.4;
-   margin:2.4rem 0 .9rem;padding-bottom:.45rem;border-bottom:1px solid var(--rule)}
+h2{font-family:var(--serif);font-weight:900;font-size:1.35rem;line-height:1.4;
+   margin:2.4rem 0 .9rem;padding-bottom:.45rem;border-bottom:2px solid var(--ink)}
 h3{font-size:1.05rem;font-weight:600;margin:1.6rem 0 .5rem}
 p{margin:0 0 1rem}
 .lede{color:var(--ink-2);font-size:1.05rem;margin-bottom:1.6rem}
@@ -138,7 +159,7 @@ select,input[type=number]{
 /* ── 결과 ─────────────────────────────────── */
 .result{background:var(--surface);border:1px solid var(--rule);
         border-left:5px solid var(--accent);padding:1.3rem 1.2rem;margin:1.4rem 0}
-.result .big{font-family:var(--mono);font-size:clamp(1.9rem,8vw,2.6rem);font-weight:500;
+.result .big{font-family:var(--sans);font-variant-numeric:tabular-nums;font-weight:900;font-size:clamp(1.9rem,8vw,2.6rem);font-weight:500;
              color:var(--accent);line-height:1.1;font-variant-numeric:tabular-nums}
 .result .cap{font-size:.92rem;color:var(--ink-2);margin-top:.3rem}
 .breakdown{list-style:none;padding:0;margin:1.2rem 0 0;border-top:1px solid var(--rule-soft)}
@@ -154,7 +175,7 @@ th,td{padding:.62rem .75rem;text-align:left;border-bottom:1px solid var(--rule-s
 thead th{background:var(--surface-2);font-size:.82rem;font-weight:600;
          color:var(--ink-2);white-space:nowrap}
 tbody tr:last-child td{border-bottom:none}
-td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;
+td.n,th.n{text-align:right;font-family:var(--sans);font-variant-numeric:tabular-nums;
           white-space:nowrap}
 
 /* ── 안내 상자 ────────────────────────────── */

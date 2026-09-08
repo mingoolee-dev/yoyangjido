@@ -20,6 +20,8 @@
   --accent:#123E6B;      /* 짙은 남색. 공공기관·의료 사이트의 신뢰색 */
   --accent-soft:#E4EDF6;
   --sand:#B03A10;        /* 주의를 뜻하는 붉은 주황 */
+  --go:#146C43;          /* 「된다, 좋다」를 뜻하는 초록 */
+  --go-soft:#E2F0E8;
   --ad:#B03A10;          /* 광고 표시 전용색. 다른 곳에 쓰지 않는다 */
   --ad-soft:#FBEAE2;
 
@@ -36,6 +38,7 @@
     --rule:#333A42; --rule-soft:#282E35;
     --accent:#7FB2E0; --accent-soft:#1B2A38;
     --sand:#E8946C; --ad:#E8946C; --ad-soft:#33211A;
+    --go:#72C39A; --go-soft:#172A22;
   }
 }
 
@@ -361,3 +364,37 @@ td .sub-cell,.sub-cell{font-size:.82rem;color:var(--ink-3);line-height:1.6}
 .board .t{flex:1;font-size:17px;font-weight:600}
 .board .v{flex:none;font-size:15px;color:var(--ink-3);
           font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ── 첫 화면 큰 덩어리 넷 ──────────────────────────────
+   전에는 같은 무게의 카드 다섯 개였는데 뭘 먼저 눌러야 할지
+   모르겠다는 말을 실제 이용자에게 들었다(2026-09-08).
+   덩어리마다 색을 달리하고 순서를 붙여 고르기 쉽게 했다. */
+.cats{display:grid;gap:12px;margin:20px 0 8px}
+@media(min-width:620px){.cats{grid-template-columns:1fr 1fr}}
+.cat{display:block;background:var(--surface);border:1px solid var(--rule);
+     border-left:7px solid var(--accent);border-radius:6px;
+     padding:16px 17px;text-decoration:none;color:inherit}
+.cat:hover{border-color:var(--accent);background:var(--accent-soft)}
+.cat .no{display:inline-block;background:var(--accent-soft);color:var(--accent);
+         font-size:13px;font-weight:700;padding:2px 9px;border-radius:3px;
+         margin-bottom:9px}
+.cat b{display:block;font-size:20px;font-weight:700;line-height:1.4;
+       letter-spacing:-.01em;margin-bottom:5px}
+.cat .sub{display:block;font-size:15px;color:var(--ink-2);line-height:1.65}
+.cat.c2{border-left-color:var(--go)}
+.cat.c2 .no{background:var(--go-soft);color:var(--go)}
+.cat.c3{border-left-color:var(--sand)}
+.cat.c3 .no{background:var(--ad-soft);color:var(--sand)}
+.cat.c4{border-left-color:var(--ink-3)}
+.cat.c4 .no{background:var(--surface-2);color:var(--ink-2)}
+
+/* 번호 붙은 안내 (등급 신청 순서) */
+.steps{list-style:none;counter-reset:s;margin:14px 0 0;padding:0;
+       background:var(--surface);border:1px solid var(--rule);border-radius:6px}
+.steps li{counter-increment:s;padding:15px 17px 15px 56px;position:relative}
+.steps li+li{border-top:1px solid var(--rule-soft)}
+.steps li::before{content:counter(s);position:absolute;left:17px;top:16px;
+  width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;
+  font-size:14px;font-weight:700;display:grid;place-items:center}
+.steps b{display:block;font-size:17px;font-weight:700;margin-bottom:3px}
+.steps p{margin:0;font-size:15.5px;color:var(--ink-2);line-height:1.7}

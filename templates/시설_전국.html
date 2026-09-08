@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% set 현재단계 = "시설 선택" %}
+{% block title %}전국 요양시설 찾기 {{ '{:,}'.format(총계) }}곳 | 요양지도{% endblock %}
+{% block desc %}국민건강보험공단에 등록된 전국 장기요양기관 {{ '{:,}'.format(총계) }}곳. 사시는 지역을 고르시면 요양원, 주야간보호, 방문요양을 한눈에 보실 수 있습니다.{% endblock %}
+
+{% block content %}
+<h1>어느 지역에서<br>찾고 계십니까?</h1>
+<p class="lede">
+  국민건강보험공단에 등록된 전국 <strong>{{ '{:,}'.format(총계) }}곳</strong>입니다.
+  제휴한 곳만 추린 목록이 아니라 등록된 곳을 빠짐없이 옮긴 것입니다.
+</p>
+
+<form class="findbox" method="get" action="/시설/">
+  <label for="q">시, 군, 구 이름으로 바로 찾기</label>
+  <div class="findrow">
+    <input id="q" name="q" type="search" value="{{ q }}"
+           placeholder="예: 군산, 강남, 수원" autocomplete="off">
+    <button type="submit" class="btn">찾기</button>
+  </div>
+</form>
+
+{% if q %}
+<h2>「{{ q }}」 검색 결과</h2>
+{% if 찾은 %}
+<ul class="board">
+  {% for r in 찾은 %}
+  <li><a href="/시설/{{ r.권역 }}/{{ r.sigungu }}/">
+    <span class="tag">{{ r.권역 }}</span>
+    <span class="t">{{ r.sigungu }}</span>
+    <span class="v">{{ '{:,}'.format(r.n) }}곳</span>
+  </a></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="note">찾으시는 지역이 없습니다. 시나 군, 구 이름만 넣어보십시오. 예를 들어 「군산시」 대신 「군산」으로 해보십시오.</p>
+{% endif %}
+{% endif %}
+
+<h2>지역으로 찾기</h2>
+<p>사시는 곳이나 부모님이 계신 곳을 고르십시오.</p>
+<div class="regions">
+  {% for 이름, 곳수, 시군구수 in 권역들 %}
+  <a class="region" href="/시설/{{ 이름 }}/">
+    <b>{{ 이름 }}</b>
+    <span>{{ '{:,}'.format(곳수) }}곳, 시군구 {{ 시군구수 }}개</span>
+  </a>
+  {% endfor %}
+</div>
+
+<h2>알아두시면 좋은 것</h2>
+<ul class="facts">
+  <li>
+    <b>공단 자료 그대로입니다.</b>
+    저희가 순위를 매기지 않습니다. 돈을 받고 위로 올려주지도 않습니다.
+  </li>
+  <li>
+    <b>전화로 한 번 확인하십시오.</b>
+    공단도 「기관에서 직접 등록한 정보로 실제와 다를 수 있으니 유선으로 확인 후 방문하시기 바랍니다」라고 안내합니다.
+    정원이나 인력은 바뀝니다.
+  </li>
+  <li>
+    <b>비급여는 시설마다 다릅니다.</b>
+    식대와 기저귀값, 이미용비는 공단 자료에 없습니다. 상담하실 때 직접 물어보셔야 합니다.
+  </li>
+</ul>
+<p class="stamp" style="border:0">
+  출처 국민건강보험공단 장기요양기관 시설별 현황 (공공데이터포털)
+  | 기준일 {{ DATA_기준일 }}
+  | 이 페이지 최종 확인 {{ 갱신일 }}
+</p>
+{% endblock %}

@@ -16,13 +16,13 @@
 {% block content %}
 <p class="crumb">
   <a href="/">요양지도</a> ›
-  <a href="/시설/전북/군산시/">군산시</a> › {{ 유형 }}
+  <a href="/시설/">시설 찾기</a> &gt; <a href="/시설/{{ 권역 }}/">{{ 권역 }}</a> &gt; <a href="{{ 목록주소 }}">{{ 시군구 }}</a> &gt; {{ 유형 }}
 </p>
 
-<h1>군산시 {{ 유형 }}</h1>
+<h1>{{ 시군구 }} {{ 유형 }}</h1>
 
 <div class="answer">
-  <p><strong>전북특별자치도 군산시에 등록된 {{ 유형 }}은 {{ 총계 }}곳입니다.</strong>
+  <p><strong>{{ 권역 }} {{ 시군구 }}에 등록된 {{ 유형 }}은 {{ 총계 }}곳입니다.</strong>
   {{ 유형설명 }}</p>
   {% if 비용요약 %}<p>{{ 비용요약|safe }}</p>{% endif %}
   <p class="answer-src">
@@ -48,14 +48,14 @@
 <p class="fee-note">{{ 비용주의|safe }}</p>
 {% endif %}
 
-{{ 광고.자리(광고키 ~ ":1") }}
+{% if 광고키 %}{{ 광고.자리(광고키 ~ ":1") }}{% endif %}
 
-<h2>군산시 {{ 유형 }} {{ 총계 }}곳</h2>
+<h2>{{ 시군구 }} {{ 유형 }} {{ 총계 }}곳</h2>
 <p>공단에 등록된 곳 전부입니다. 정원이 큰 순서로 보여드립니다.</p>
 <ul class="list">
   {% for r in rows %}
   <li>
-    <a href="/시설/전북/군산시/{{ r.slug }}">
+    <a href="{{ 목록주소 }}{{ r.slug }}">
       <span class="nm">{{ r.name }}</span>
       <span class="meta">
         {% if r.capacity %}정원 {{ r.capacity }}{% endif %}
@@ -72,11 +72,11 @@
   자리가 있는지는 시설에 전화로 물어보셔야 합니다.
 </div>
 
-{{ 광고.자리(광고키 ~ ":2") }}
+{% if 광고키 %}{{ 광고.자리(광고키 ~ ":2") }}{% endif %}
 
 <h2>다른 종류도 보시겠어요</h2>
 <div class="chips">
-  <a href="/시설/전북/군산시/">전체<span class="n">{{ 전체수 }}</span></a>
+  <a href="{{ 목록주소 }}">전체<span class="n">{{ 전체수 }}</span></a>
   {% for t, n, 링크 in 다른유형 %}
   <a href="{{ 링크 }}"{% if t == 유형 %} class="on"{% endif %}>{{ t }}<span class="n">{{ n }}</span></a>
   {% endfor %}

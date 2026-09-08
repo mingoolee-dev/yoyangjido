@@ -46,6 +46,12 @@ DATA_URL = "https://www.data.go.kr/data/15124763/fileData.do"
     "방문간호": "간호사가 집으로 찾아와 간호를 해드립니다.",
     "복지용구": "휠체어·침대·기저귀 같은 용품을 급여로 사거나 빌리는 곳입니다.",
 }
+# 권역. 행정구역 그대로가 아니라 사람이 생각하는 생활권으로 나눈다.
+# 경기도만 7,436곳이라 남부와 북부로 쪼갠다. build_db.py 와 같은 순서를 쓴다.
+권역순서 = ["서울", "경기남부", "경기북부", "인천", "강원", "대전세종",
+            "충북", "충남", "대구", "경북", "부산", "울산", "경남",
+            "광주", "전북", "전남", "제주"]
+
 # 경로형 주소를 갖는 유형. 검색 수요가 확인된 것만 연다.
 # (Ahrefs 2026-08-24: 주야간보호·방문목욕·치매전담실은 검색량 0이라 열지 않았다)
 경로유형 = {
@@ -121,6 +127,7 @@ def ctx(**kw):
         "갱신일": 갱신일, "네이버_소유확인": 네이버_소유확인, "절대주소": 절대주소,
         # 기본은 색인 금지. 켤 페이지에서만 명시적으로 뒤집는다.
         "색인": False, "canonical": None, "스키마": [], "경로유형": 경로유형,
+        "권역순서": 권역순서,
         # 배너 자리. 광고가 걸려 있으면 노출을 세고, 없으면 '이 자리 문의'가 뜬다.
         "광고자리": _광고자리, "광고정의": ads.자리표, "광고문의": 광고문의,
     }
@@ -181,34 +188,114 @@ def calc(request: Request,
               seo.이동경로_스키마([("요양지도", "/"), ("요양원 본인부담금 계산", "/계산기/요양원-본인부담금")])]))
 
 
-@app.get("/시설/전북/군산시/", response_class=HTMLResponse)
-def region(request: Request, 유형: str = Query("", alias="유형")):
+# ── 시설 찾기 ─────────────────────────────────────────────────────
+# 구조: 전국 → 권역 → 시군구 → 유형 → 시설
+# 주소는 예전 것을 그대로 쓴다. /시설/전북/군산시/ 는 바뀌지 않는다.
+#
+# 색인 정책이 여기서 제일 중요하다.
+#   전국 28,791곳을 지역x유형으로 쪼개면 3,006쪽이 나오는데
+#   그중 41%가 시설 세 곳 이하다. 그걸 다 색인에 올리면
+#   구글이 「관문 페이지 대량 생성」으로 본다(2026-08-18 스팸 업데이트).
+#   그래서 보여주기는 다 하되, 색인은 우리가 직접 취재한 지역만 켠다.
+취재완료_지역 = {("전북", "군산시")}
+
+
+def _권역목록(con):
+    return con.execute("""
+        SELECT 권역, COUNT(*) n, COUNT(DISTINCT sigungu) g
+          FROM facility GROUP BY 권역""").fetchall()
+
+
+def _시군구목록(con, 권역):
+    return con.execute("""
+        SELECT sigungu, COUNT(*) n FROM facility
+         WHERE 권역 = ? GROUP BY sigungu ORDER BY sigungu""", (권역,)).fetchall()
+
+
+@app.get("/시설/", response_class=HTMLResponse)
+def 시설_전국(request: Request, q: str = Query("")):
     con = db()
-    유형별 = {r["type"]: r["c"] for r in con.execute(
-        "SELECT type, COUNT(*) c FROM facility_type GROUP BY type")}
+    찾은 = []
+    말 = q.strip()
+    if 말:
+        찾은 = con.execute("""
+            SELECT 권역, sigungu, COUNT(*) n FROM facility
+             WHERE sigungu LIKE ? GROUP BY 권역, sigungu
+             ORDER BY n DESC LIMIT 30""", (f"%{말}%",)).fetchall()
+    개수 = {r["권역"]: r for r in _권역목록(con)}
+    총계 = con.execute("SELECT COUNT(*) c FROM facility").fetchone()["c"]
+    con.close()
+    권역들 = [(k, 개수[k]["n"], 개수[k]["g"]) for k in 권역순서 if k in 개수]
+    return tpl.TemplateResponse(request, "시설_전국.html", ctx(
+        권역들=권역들, 총계=총계, q=말, 찾은=찾은,
+        색인=True, canonical="/시설/",
+        스키마=[seo.이동경로_스키마([("요양지도", "/"), ("시설 찾기", "/시설/")])]))
+
+
+@app.get("/시설/{region}/", response_class=HTMLResponse)
+def 시설_권역(request: Request, region: str):
+    권역 = region
+    if 권역 not in 권역순서:
+        return HTMLResponse(tpl.get_template("404.html").render(ctx()), status_code=404)
+    con = db()
+    시군구들 = _시군구목록(con, 권역)
+    if not 시군구들:
+        con.close()
+        return HTMLResponse(tpl.get_template("404.html").render(ctx()), status_code=404)
+    유형별 = {r["type"]: r["c"] for r in con.execute("""
+        SELECT t.type, COUNT(*) c FROM facility_type t
+          JOIN facility f ON f.code = t.code
+         WHERE f.권역 = ? GROUP BY t.type""", (권역,))}
+    con.close()
+    총계 = sum(r["n"] for r in 시군구들)
+    순 = [(t, 유형별[t]) for t in 유형순서 if t in 유형별]
+    return tpl.TemplateResponse(request, "시설_권역.html", ctx(
+        권역=권역, 시군구들=시군구들, 총계=총계, 유형별=순,
+        색인=True, canonical=f"/시설/{권역}/",
+        스키마=[seo.이동경로_스키마([("요양지도", "/"), ("시설 찾기", "/시설/"),
+                              (f"{권역} 요양시설", f"/시설/{권역}/")])]))
+
+
+@app.get("/시설/{region}/{city}/", response_class=HTMLResponse)
+def region(request: Request, region: str, city: str, 유형: str = Query("", alias="유형")):
+    권역, 시군구 = region, city
+    con = db()
+    유형별 = {r["type"]: r["c"] for r in con.execute("""
+        SELECT t.type, COUNT(*) c FROM facility_type t
+          JOIN facility f ON f.code = t.code
+         WHERE f.권역 = ? AND f.sigungu = ? GROUP BY t.type""", (권역, 시군구))}
+    if not 유형별:
+        con.close()
+        return HTMLResponse(tpl.get_template("404.html").render(ctx()), status_code=404)
     if 유형 in 유형별:
         rows = con.execute("""
             SELECT f.*, t.capacity FROM facility f
-            JOIN facility_type t ON t.code = f.code AND t.type = ?
-            ORDER BY t.capacity DESC, f.name""", (유형,)).fetchall()
+              JOIN facility_type t ON t.code = f.code AND t.type = ?
+             WHERE f.권역 = ? AND f.sigungu = ?
+             ORDER BY t.capacity DESC, f.name""", (유형, 권역, 시군구)).fetchall()
     else:
         유형 = ""
-        rows = con.execute(
-            "SELECT *, 대표정원 AS capacity FROM facility ORDER BY 대표정원 DESC, name").fetchall()
+        rows = con.execute("""
+            SELECT *, 대표정원 AS capacity FROM facility
+             WHERE 권역 = ? AND sigungu = ?
+             ORDER BY 대표정원 DESC, name""", (권역, 시군구)).fetchall()
     con.close()
     순 = [(t, 유형별[t]) for t in 유형순서 if t in 유형별]
     총계 = sum(유형별.values())
 
     # 필터를 건 주소는 원본과 내용이 겹친다. 색인하지 않고 원본을 가리킨다.
     필터중 = bool(유형)
+    올림 = (권역, 시군구) in 취재완료_지역 and not 필터중
     스키마 = []
-    if not 필터중:
+    if 올림:
         스키마 = [seo.데이터셋_스키마(DATA_기준일, DATA_URL, len(rows)),
-                seo.이동경로_스키마([("요양지도", "/"), ("전북특별자치도", ""),
-                                ("군산시 요양시설", "/시설/전북/군산시/")])]
+                seo.이동경로_스키마([("요양지도", "/"), ("시설 찾기", "/시설/"),
+                                (f"{권역} 요양시설", f"/시설/{권역}/"),
+                                (f"{시군구} 요양시설", f"/시설/{권역}/{시군구}/")])]
     return tpl.TemplateResponse(request, "region.html", ctx(
         rows=rows, 유형=유형, 유형별=순, 유형설명=유형설명, 총계=총계, seo=seo,
-        색인=not 필터중, canonical="/시설/전북/군산시/", 스키마=스키마))
+        권역=권역, 시군구=시군구, 취재완료=(권역, 시군구) in 취재완료_지역,
+        색인=올림, canonical=f"/시설/{권역}/{시군구}/", 스키마=스키마))
 
 
 def _유형_비용(유형):
@@ -255,67 +342,87 @@ def _유형_비용(유형):
     return {}
 
 
-@app.get("/시설/전북/군산시", response_class=HTMLResponse)
-def region_no_slash():
-    return RedirectResponse("/시설/전북/군산시/", status_code=301)
+
+@app.get("/시설/{region}/{city}", response_class=HTMLResponse)
+def region_no_slash(region: str, city: str):
+    return RedirectResponse(f"/시설/{quote(region)}/{quote(city)}/", status_code=301)
 
 
-@app.get("/시설/전북/군산시/{kind}/", response_class=HTMLResponse)
-def 유형페이지(request: Request, kind: str):
+@app.get("/시설/{region}/{city}/{kind}/", response_class=HTMLResponse)
+def 유형페이지(request: Request, region: str, city: str, kind: str):
     # 경로 파라미터 이름은 반드시 ASCII여야 한다.
     # Starlette는 {유형} 같은 한글 이름을 파라미터로 인식하지 못하고
     # 문자 그대로의 경로로 취급한다(2026-08-24 실제로 겪음).
-    유형 = kind
+    권역, 시군구, 유형 = region, city, kind
+    목록 = f"/시설/{quote(권역)}/{quote(시군구)}/"
     if 유형 not in 경로유형:
         con = db()
-        있음 = con.execute("SELECT 1 FROM facility_type WHERE type = ? LIMIT 1", (유형,)).fetchone()
+        있음 = con.execute("""
+            SELECT 1 FROM facility_type t JOIN facility f ON f.code = t.code
+             WHERE t.type = ? AND f.권역 = ? AND f.sigungu = ? LIMIT 1""",
+            (유형, 권역, 시군구)).fetchone()
         con.close()
         # 검색 수요가 없어 페이지를 열지 않은 유형은 원본 목록으로 넘긴다.
         if 있음:
-            return RedirectResponse(f"/시설/전북/군산시/?유형={quote(유형)}", status_code=301)
+            return RedirectResponse(f"{목록}?유형={quote(유형)}", status_code=301)
         return HTMLResponse(tpl.get_template("404.html").render(ctx()), status_code=404)
 
     con = db()
     rows = con.execute("""
         SELECT f.*, t.capacity FROM facility f
-        JOIN facility_type t ON t.code = f.code AND t.type = ?
-        ORDER BY t.capacity DESC, f.name""", (유형,)).fetchall()
-    유형별 = {r["type"]: r["c"] for r in con.execute(
-        "SELECT type, COUNT(*) c FROM facility_type GROUP BY type")}
-    전체수 = con.execute("SELECT COUNT(*) c FROM facility").fetchone()["c"]
+          JOIN facility_type t ON t.code = f.code AND t.type = ?
+         WHERE f.권역 = ? AND f.sigungu = ?
+         ORDER BY t.capacity DESC, f.name""", (유형, 권역, 시군구)).fetchall()
+    if not rows:
+        con.close()
+        return HTMLResponse(tpl.get_template("404.html").render(ctx()), status_code=404)
+    유형별 = {r["type"]: r["c"] for r in con.execute("""
+        SELECT t.type, COUNT(*) c FROM facility_type t
+          JOIN facility f ON f.code = t.code
+         WHERE f.권역 = ? AND f.sigungu = ? GROUP BY t.type""", (권역, 시군구))}
+    전체수 = con.execute(
+        "SELECT COUNT(*) c FROM facility WHERE 권역=? AND sigungu=?",
+        (권역, 시군구)).fetchone()["c"]
     con.close()
 
     b = _유형_비용(유형)
     다른유형 = [(t, 유형별[t],
-                f"/시설/전북/군산시/{quote(t)}/" if t in 경로유형 else f"/시설/전북/군산시/?유형={quote(t)}")
+                f"{목록}{quote(t)}/" if t in 경로유형 else f"{목록}?유형={quote(t)}")
               for t in 유형순서 if t in 유형별]
 
-    제목 = f"군산시 {유형} {len(rows)}곳 — 정원·비용 한 번에"
-    요약 = (f"군산시 {유형} {len(rows)}곳 전체 목록. 국민건강보험공단 공개 자료 기준. "
+    제목 = f"{시군구} {유형} {len(rows)}곳 — 정원과 비용 한 번에"
+    요약 = (f"{시군구} {유형} {len(rows)}곳 전체 목록. 국민건강보험공단 공개 자료 기준. "
             f"2026년 수가로 본인부담금을 함께 정리했습니다.")
-    경로 = f"/시설/전북/군산시/{유형}/"
+    경로 = f"{목록}{quote(유형)}/"
+    올림 = (권역, 시군구) in 취재완료_지역
 
     # 유형마다 광고 자리가 다르다. 요양원 자리에 재가센터를 걸지 않는다.
-    광고키 = {"요양원": "군산요양원:요양원", "방문요양": "군산방문요양:재가"}.get(유형, "")
+    광고키 = ""
+    if (권역, 시군구) == ("전북", "군산시"):
+        광고키 = {"요양원": "군산요양원:요양원", "방문요양": "군산방문요양:재가"}.get(유형, "")
 
+    스키마 = []
+    if 올림:
+        스키마 = [seo.데이터셋_스키마(DATA_기준일, DATA_URL, len(rows)),
+                seo.이동경로_스키마([("요양지도", "/"), ("시설 찾기", "/시설/"),
+                                (f"{권역} 요양시설", f"/시설/{권역}/"),
+                                (f"{시군구} 요양시설", f"/시설/{권역}/{시군구}/"),
+                                (f"{시군구} {유형}", f"/시설/{권역}/{시군구}/{유형}/")])]
     return tpl.TemplateResponse(request, "유형.html", ctx(
         rows=rows, 유형=유형, 총계=len(rows), 전체수=전체수, 다른유형=다른유형,
-        광고키=광고키,
+        광고키=광고키, 권역=권역, 시군구=시군구, 목록주소=목록,
         유형설명=유형설명.get(유형, ""), fees=fees,
         비용요약=b.get("요약"), 비용설명=b.get("설명"),
         비용표=b.get("표"), 비용주의=b.get("주의"), 다음글=b.get("다음글"),
-        제목=제목, 요약=요약, 색인=True, canonical=경로,
-        스키마=[seo.데이터셋_스키마(DATA_기준일, DATA_URL, len(rows)),
-              seo.이동경로_스키마([("요양지도", "/"),
-                              ("군산시 요양시설", "/시설/전북/군산시/"),
-                              (f"군산시 {유형}", 경로)])]))
+        제목=제목, 요약=요약, 색인=올림, canonical=경로, 스키마=스키마))
 
 
-@app.get("/시설/전북/군산시/{slug}", response_class=HTMLResponse)
-def facility(request: Request, slug: str):
+@app.get("/시설/{region}/{city}/{slug}", response_class=HTMLResponse)
+def facility(request: Request, region: str, city: str, slug: str):
+    권역, 시군구 = region, city
     con = db()
     f = con.execute("SELECT * FROM facility WHERE slug = ?", (slug,)).fetchone()
-    if not f:
+    if not f or f["권역"] != 권역 or f["sigungu"] != 시군구:
         con.close()
         return HTMLResponse(
             tpl.get_template("404.html").render(ctx(request=request)), status_code=404)
@@ -323,8 +430,9 @@ def facility(request: Request, slug: str):
         "SELECT type, capacity FROM facility_type WHERE code = ?", (f["code"],)).fetchall()
     같은동 = con.execute("""
         SELECT name, slug, 대표유형, 대표정원 FROM facility
-        WHERE dong = ? AND code != ? ORDER BY 대표정원 DESC LIMIT 6""",
-        (f["dong"], f["code"])).fetchall()
+         WHERE dong = ? AND 권역 = ? AND sigungu = ? AND code != ?
+         ORDER BY 대표정원 DESC LIMIT 6""",
+        (f["dong"], 권역, 시군구, f["code"])).fetchall()
     con.close()
     ts = sorted(ts, key=lambda r: 유형순서.index(r["type"]) if r["type"] in 유형순서 else 99)
     비용 = None
@@ -335,8 +443,9 @@ def facility(request: Request, slug: str):
     메모 = seo.시설_메모(f)
     return tpl.TemplateResponse(request, "facility.html", ctx(
         f=f, ts=ts, 같은동=같은동, 유형설명=유형설명, 비용=비용, 메모=메모,
+        권역=권역, 시군구=시군구, 목록주소=f"/시설/{quote(권역)}/{quote(시군구)}/",
         색인=색인가능, 색인보류사유=색인보류사유,
-        canonical=f"/시설/전북/군산시/{slug}"))
+        canonical=f"/시설/{권역}/{시군구}/{slug}"))
 
 
 @app.get("/글/요양원-요양병원-차이", response_class=HTMLResponse)
@@ -569,10 +678,17 @@ def sitemap():
             ("/글/요양원-요양병원-차이", "0.9"),
             ("/글/요양병원-한달-비용", "0.9"),
             ("/글/간병비", "0.9"),
-            ("/시설/전북/군산시/", "0.8"),
-            # 광고주(요양원·간병업체)가 검색으로 찾아와야 하는 페이지다.
+            ("/시설/", "0.8"),
+            # 광고주(요양원과 간병업체)가 검색으로 찾아와야 하는 페이지다.
             ("/광고안내", "0.6")]
-    urls += [(f"/시설/전북/군산시/{t}/", "0.7") for t in 경로유형]
+    # 권역 17쪽. 여기까지가 우리가 검색엔진에 내놓는 지역 페이지다.
+    urls += [(f"/시설/{k}/", "0.7") for k in 권역순서]
+    # 시군구는 우리가 직접 취재한 곳만 올린다.
+    # 전국 250개를 다 올리면 절반이 시설 몇 곳짜리 빈 표가 되고,
+    # 그건 구글이 「관문 페이지」로 본다.
+    for 권역, 시군구 in sorted(취재완료_지역):
+        urls.append((f"/시설/{권역}/{시군구}/", "0.7"))
+        urls += [(f"/시설/{권역}/{시군구}/{t}/", "0.6") for t in 경로유형]
     con = db()
     for f in con.execute("SELECT * FROM facility"):
         ok, _ = seo.시설_색인여부(f)
